@@ -24,6 +24,9 @@ from astropy.coordinates import SkyCoord
 from astropy.table import Table
 from astropy.time import Time
 from astroquery.gaia import Gaia
+from astropy.stats import sigma_clip
+from filters import filter_gaia_data
+import skimage as ski
 # %% 
 # %%plotting parametres
 from matplotlib import rc
@@ -83,9 +86,14 @@ else:
     print(f'NO time detected for this field_two = {field_two}')
     sys.exit()
 
+dt = t2 - t1
 
 
-
+# transf = 'affine'#!!!
+# transf = 'similarity'#!!!1
+transf = 'polynomial'#!!!
+# transf = 'shift'#!!!
+order_trans = 2
 
 
 # Arches and Quintuplet coordinates for plotting and check if it will be covered.
@@ -199,6 +207,110 @@ ax.set_xlabel('l[ deg]', fontsize = 10)
 ax.set_ylabel('b [deg]', fontsize = 10)
 # ax.axis('scaled')
 ax.set_ylim(min(gaia['b']),max(gaia['b']))
+
+
+
+gns1_c = SkyCoord(l = gns1['l'], b = gns1['b'], 
+                    unit = 'degree', frame = 'galactic')
+gns2_c = SkyCoord(l = gns2['l'], b = gns2['b'], 
+                    unit = 'degree', frame = 'galactic')
+
+
+# %%
+# Driect alignemnet
+max_sep = 100*u.mas#!!!
+
+
+
+idx,d2d,d3d = gns2_c.match_to_catalog_sky(gns1_c,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
+sep_constraint = d2d < max_sep
+gns2_m = gns2[sep_constraint]
+gns1_m = gns1[idx[sep_constraint]]
+
+
+diff_H = gns2_m['H']-gns1_m['H']
+off_s = np.mean(diff_H)
+gns1_m['H'] = gns1_m['H'] + off_s
+diff_H = gns2_m['H'] - gns1_m['H']
+
+diff_H = gns2_m['H']-gns1_m['H']
+sig_cl = 2
+mask_H, l_lim,h_lim = sigma_clip(diff_H, sigma=sig_cl, masked = True, return_bounds= True)
+
+gns2_m = gns2_m[mask_H.mask]
+gns1_m = gns1_m[mask_H.mask]
+
+fig,ax = plt.subplots(1,1)
+ax.hist(diff_H, bins = 'auto',histtype = 'step')
+ax.axvline(np.mean(diff_H), color = 'k', ls = 'dashed', label = 'H offset = %.2f\n$\sigma$ = %.2f'%(off_s,np.std(diff_H)))
+ax.axvline(l_lim, ls = 'dashed', color ='r')
+ax.axvline(h_lim, ls = 'dashed', color ='r')
+ax.legend() 
+
+
+
+
+
+xy_gn2 = np.array([gns2_m['x'],gns2_m['y']]).T
+xy_gn1 = np.array([gns1_m['x'],gns1_m['y']]).T
+# xy_gn2 = np.array([gns2_m['l'],gns2_m['b']]).T
+# xy_gn1 = np.array([gns1_m['l'],gns1_m['b']]).T
+
+N = 5
+if transf == 'polynomial':
+    p = ski.transform.estimate_transform(transf,
+                                        xy_gn2[::N], 
+                                        xy_gn1[::N], order = order_trans)
+else:    
+    p = ski.transform.estimate_transform(transf,
+                                    xy_gn2[::N], 
+                                    xy_gn1[::N])
+    
+print(p)
+
+xy_gn2_t = p(xy_gn2)
+
+gns2_m['l'] = xy_gn2_t[:,0]*u.deg
+gns2_m['b'] = xy_gn2_t[:,1]*u.deg
+
+
+mean_b  = np.cos((gns1_m['b'].to(u.rad) + gns2_m['b'].to(u.rad)) / 2.0)
+
+dl = (gns2_m['l']- gns1_m['l']).to(u.mas)
+db = (gns2_m['b']- gns1_m['b']).to(u.mas)
+
+pm_l = (dl*mean_b)/dt.to(u.year)
+pm_b = (db)/dt.to(u.year)
+
+fig, (ax,ax2) = plt.subplots(1,2)
+ax.hist(pm_l, bins = 'auto', histtype = 'step')
+ax2.hist(pm_b, bins = 'auto', histtype = 'step')
+
+
+
+
+# e_pm = 0.3
+# gaia_good = filter_gaia_data(
+#     gaia_table=gaia,
+#     astrometric_params_solved=31,
+#     duplicated_source= False,
+#     parallax_over_error_min=-10,
+#     astrometric_excess_noise_sig_max=2,
+#     phot_g_mean_mag_min= None,
+#     phot_g_mean_mag_max=13 ,
+#     pm_min=0,
+#     pmra_error_max=e_pm,
+#     pmdec_error_max=e_pm
+#     )
+
+
+
+
+
+
+
+
+
 
 
 
