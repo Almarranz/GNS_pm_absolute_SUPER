@@ -52,6 +52,7 @@ def alg_rel(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
     dic_xy = {}
     dic_Kx ={}
     dic_xy_final = {}
+    iner_loops = 0
    
     l2_xy = np.array([gns_B[col1],gns_B[col2]]).T
     
@@ -75,11 +76,14 @@ def alg_rel(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
                     loop = -1
                     continue
                 except:
-                    gns_A[col1] = dic_xy_final[f'xy_deg{deg-1}'][:,0]
-                    gns_A[col2] = dic_xy_final[f'xy_deg{deg-1}'][:,1]
-                    print(f'Number of common star with polynomial degere {deg} decreases after a single iteration.\nUsing the last iteration of degree {deg -1} ')
-                    deg = deg
-                    break
+                    try:
+                        gns_A[col1] = dic_xy_final[f'xy_deg{deg-1}'][:,0]
+                        gns_A[col2] = dic_xy_final[f'xy_deg{deg-1}'][:,1]
+                        print(f'Number of common star with polynomial degere {deg} decreases after a single iteration.\nUsing the last iteration of degree {deg -1} ')
+                        deg = deg
+                        break
+                    except:
+                        deg =+1
                 
         comom_ls.append(len(comp))
         print(f'Common in loop {loop}, degree {deg} = %s'%(len(comp['ind_1'])))
