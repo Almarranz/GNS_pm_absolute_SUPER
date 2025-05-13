@@ -29,6 +29,7 @@ import skimage as ski
 from astropy.table import Table
 from compare_lists import compare_lists
 from astropy.stats import sigma_clip
+from alignator_looping import alg_loop
 # %%plotting parametres
 from matplotlib import rc
 from matplotlib import rcParams
@@ -57,7 +58,7 @@ plt.rcParams.update({'figure.max_open_warning': 0})# a warniing for matplot lib 
 # IPython.get_ipython().run_line_magic('matplotlib', 'auto')
 IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # %%
-field_one = 60
+field_one = 100
 chip_one = 0
 field_two = 20
 chip_two = 0
@@ -87,11 +88,12 @@ dt_gns = t2_gns - t1_gns
 # %%
 # ===============================Constants=====================================
 max_sig = 0.5
-
-max_sep = 50*u.mas#!!!
-max_deg = 3
-transf = 'affine'
-# transf = 'similarity'
+align_loop = 'yes'
+# align_loop = 'no'
+max_sep = 90*u.mas#!!!
+max_deg = 5
+# transf = 'affine'
+transf = 'similarity'
 # transf = 'polynomial'
 order_trans = 3
 # clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
@@ -140,7 +142,6 @@ gns2['xp'] = xg_2.to(u.arcsec)
 gns2['yp'] = yg_2.to(u.arcsec)
 
 radius = abs(np.min(gns1['l'])-np.max(gns1['l']))*1*u.degree
-
 # %%
 try:
     
@@ -160,7 +161,7 @@ except:
 gaia['id'] = np.arange(len(gaia))
 
 bad = []
-bad =  [119, 150, 223, 286, 1018]
+bad =  [15, 112, 189, 575, 689,65, 154]
 if len(bad)>0:#!!!
     del_1 = np.isin(gaia['id'], bad)#!!!
     gaia = gaia[np.logical_not(del_1)]#!!!
@@ -210,6 +211,9 @@ gaia['pm_l'] = gaia_lb.pm_l_cosb
 gaia['pm_b'] = gaia_lb.pm_b
 
 tg = Time(['2016-01-01T00:00:00'],scale='utc')
+
+
+
 # %%
 
 def sig_cl(x, y,s):
@@ -236,20 +240,36 @@ for c,cat in enumerate(catalogs):
         pm_ra_cosdec=gaia['pmra'], pm_dec=gaia['pmdec'],
         frame='icrs', obstime='J2016'
     ).galactic
+    
+    
+    gaia_l = gaia_lb.l + gaia_lb.pm_l_cosb*dt.to(u.yr)
+    gaia_b = gaia_lb.b + gaia_lb.pm_b*dt.to(u.yr)
+    
+    
+    gaia_lbt = SkyCoord(l = gaia_l, b = gaia_b, frame = 'galactic')
+    
+    gaia[f'l{cat["tag"]}'] = gaia_lbt.l
+    gaia[f'b{cat["tag"]}'] = gaia_lbt.b
+    
+    xp_g, yp_g = center.spherical_offsets_to(gaia_lbt.frame)
+    
+    gaia['xp'] = xp_g.to(u.arcsec) 
+    gaia['yp'] = yp_g.to(u.arcsec) 
+    
+    gaia[f'xp_{c+1}'] = xp_g.to(u.arcsec) 
+    gaia[f'yp_{c+1}'] = yp_g.to(u.arcsec) 
+     
 
-    xp_g, yp_g = center.spherical_offsets_to(gaia_lb.frame)
-    gaia['xp'] = xp_g.to(u.arcsec) + gaia_lb.pm_l_cosb * dt.to(u.yr)
-    gaia['yp'] = yp_g.to(u.arcsec) + gaia_lb.pm_b * dt.to(u.yr)
+    # xp_g, yp_g = center.spherical_offsets_to(gaia_lb.frame)
+    # gaia['xp'] = xp_g.to(u.arcsec) + gaia_lb.pm_l_cosb * dt.to(u.yr)
+    # gaia['yp'] = yp_g.to(u.arcsec) + gaia_lb.pm_b * dt.to(u.yr)
     
-    gaia[f'xp_{c+1}'] = xp_g.to(u.arcsec) + gaia_lb.pm_l_cosb * dt.to(u.yr)
-    gaia[f'yp_{c+1}'] = yp_g.to(u.arcsec) + gaia_lb.pm_b * dt.to(u.yr)
-    
-   
-    
+    # gaia[f'xp_{c+1}'] = xp_g.to(u.arcsec) + gaia_lb.pm_l_cosb * dt.to(u.yr)
+    # gaia[f'yp_{c+1}'] = yp_g.to(u.arcsec) + gaia_lb.pm_b * dt.to(u.yr)
 
-    ga_gtc = center.spherical_offsets_by(gaia['xp'], gaia['yp'])
-    gaia[f'l{cat["tag"]}'] = ga_gtc.l
-    gaia[f'b{cat["tag"]}'] = ga_gtc.b
+    # ga_gtc = center.spherical_offsets_by(gaia['xp'], gaia['yp'])
+    # gaia[f'l{cat["tag"]}'] = ga_gtc.l
+    # gaia[f'b{cat["tag"]}'] = ga_gtc.b
 
     gns_cat = cat['gns']
     gaia_c = SkyCoord(l=gaia[f'l{cat["tag"]}'], b=gaia[f'b{cat["tag"]}'], frame='galactic')
@@ -273,7 +293,7 @@ for c,cat in enumerate(catalogs):
     ax.set_xlabel('l')
     ax.set_ylabel('b')
     ax.legend()
-    
+
     # Fit transform
     if transf == 'polynomial':
         p = ski.transform.estimate_transform(
@@ -285,7 +305,8 @@ for c,cat in enumerate(catalogs):
             transf, np.array([gns_m['xp'], gns_m['yp']]).T,
             np.array([gaia_m['xp'], gaia_m['yp']]).T
         )
-    print(p)
+    print(p.params)
+
 
     gns_trans = p(np.array([gns_cat['xp'], gns_cat['yp']]).T)
     gns_cat['xp'] = gns_trans[:, 0]
@@ -294,8 +315,32 @@ for c,cat in enumerate(catalogs):
     gns_xy = np.array([gns_cat['xp'],gns_cat['yp']]).T
     gaia_xy = np.array([gaia['xp'],gaia['yp']]).T
     xy_mat = compare_lists(gns_xy, gaia_xy, max_sep.to(u.arcsec).value)
-
     
+    # for i in range(15):
+        
+        
+    #     # p = ski.transform.estimate_transform(
+    #     #     transf, np.array([gns_cat['xp'][xy_mat['ind_1']] , gns_cat['yp'][xy_mat['ind_1']] ]).T,
+    #     #     np.array([gaia['xp'][xy_mat['ind_2']] , gaia['yp'][xy_mat['ind_2']] ]).T)
+        
+    #     p = ski.transform.estimate_transform(
+    #         'polynomial', np.array([gns_cat['xp'][xy_mat['ind_1']] , gns_cat['yp'][xy_mat['ind_1']] ]).T,
+    #         np.array([gaia['xp'][xy_mat['ind_2']] , gaia['yp'][xy_mat['ind_2']] ]).T, order = 2)
+        
+    #     gns_trans = p(np.array([gns_cat['xp'], gns_cat['yp']]).T)
+    #     gns_cat['xp'] = gns_trans[:, 0]
+    #     gns_cat['yp'] = gns_trans[:, 1]
+    
+    #     gns_xy = np.array([gns_cat['xp'],gns_cat['yp']]).T
+    #     gaia_xy = np.array([gaia['xp'],gaia['yp']]).T
+    #     xy_mat = compare_lists(gns_xy, gaia_xy, max_sep.to(u.arcsec).value)
+        
+    #     print(len(xy_mat))
+    #     print(p.params)
+
+        
+
+    # sys.exit()
     ax1.set_title(f'Matches = {len(xy_mat)}\nMin dist = {max_sep} ')
     ax1.scatter(gns_cat['xp'][::100], gns_cat['yp'][::100], alpha =0.1, color = 'k')
     ax1.scatter(gaia['xp'], gaia['yp'],s =10, label = 'Gaia')
@@ -304,17 +349,20 @@ for c,cat in enumerate(catalogs):
     ax1.set_xlabel('xp[arcsec]')
     ax1.legend()
     
-    # Optional final refinement
-    # gns_cat = alg_rel(gns_cat, gaia, 'xp', 'yp', align, max_deg, max_sep.to(u.arcsec).value)
-    
-    p2 = ski.transform.estimate_transform('polynomial', 
-        np.array([gns_cat['xp'][xy_mat['ind_1']], gns_cat['yp'][xy_mat['ind_1']]]).T,
-        np.array([gaia['xp'][xy_mat['ind_2']], gaia['yp'][xy_mat['ind_2']]]).T, order=2)
-    
-    gns_trans = p2(np.array([gns_cat['xp'], gns_cat['yp']]).T)
-    
-    gns_cat['xp'] = gns_trans[:,0]
-    gns_cat['yp'] = gns_trans[:,1]
+    if align_loop  == 'yes':
+        # Optional final refinement
+        # gns_cat = alg_rel(gns_cat, gaia, 'xp', 'yp', align, max_deg, max_sep.to(u.arcsec).value)
+        gns_cat = alg_loop(gns_cat, gaia, 'xp', 'yp', align, max_deg, max_sep.to(u.arcsec).value)
+        
+    elif align_loop == 'no':
+        p2 = ski.transform.estimate_transform('polynomial', 
+            np.array([gns_cat['xp'][xy_mat['ind_1']], gns_cat['yp'][xy_mat['ind_1']]]).T,
+            np.array([gaia['xp'][xy_mat['ind_2']], gaia['yp'][xy_mat['ind_2']]]).T, order=2)
+        
+        gns_trans = p2(np.array([gns_cat['xp'], gns_cat['yp']]).T)
+        
+        gns_cat['xp'] = gns_trans[:,0]
+        gns_cat['yp'] = gns_trans[:,1]
     
     
     
@@ -385,7 +433,7 @@ gns2_al = catalogs[1]['gns']
 gns1_gxy  = np.array([gns1_al['xp'], gns1_al['yp']]).T 
 gns2_gxy  = np.array([gns2_al['xp'], gns2_al['yp']]).T 
 
-gns_com = compare_lists(gns1_gxy, gns2_gxy,0.200 )
+gns_com = compare_lists(gns1_gxy, gns2_gxy,0.150 )
 
 gns1_gxy  = gns1_gxy[gns_com['ind_1']]  
 gns2_gxy  = gns2_gxy[gns_com['ind_2']]  
@@ -410,6 +458,7 @@ pm_ym = pm_y[m_pm]
 # %%
 fig, (ax,ax2) = plt.subplots(1,2)
 
+
 bins = 30
 ax.hist(pm_x, bins = bins, color = 'grey', alpha = 0.3)
 ax2.hist(pm_y, bins = bins, color = 'grey', alpha = 0.3)
@@ -429,10 +478,11 @@ ax.set_xlabel('$\mu_{xp}$ [mas/yr]')
 ax2.set_xlabel('$\mu_{yp}$ [mas/yr]')
 fig.tight_layout()
 
+g_fac = 5# make the min distance 3 times bigger when comrin with Gaia
 
 gns1_xy = np.array([gns1['xp'], gns1['yp']]).T
 gaia1_xy = np.array([gaia['xp_1'], gaia['yp_1']]).T
-gns1_ga = compare_lists(gns1_gxy, gaia1_xy,max_sep.to(u.arcsec).value)
+gns1_ga = compare_lists(gns1_gxy, gaia1_xy, max_sep.to(u.arcsec).value*g_fac)
 
 dpm_x = (gaia['pm_l'][gns1_ga['ind_2']] - gns1['pm_xp'][gns1_ga['ind_1']]) 
 dpm_y = (gaia['pm_b'][gns1_ga['ind_2']] - gns1['pm_yp'][gns1_ga['ind_1']])
@@ -454,7 +504,7 @@ bad_xy = np.logical_not(m_xy)
 
 gns2_xy = np.array([gns2['xp'], gns2['yp']]).T
 gaia2_xy = np.array([gaia['xp_2'], gaia['yp_2']]).T
-gns2_ga = compare_lists(gns2_gxy, gaia2_xy,max_sep.to(u.arcsec).value)
+gns2_ga = compare_lists(gns2_gxy, gaia2_xy, max_sep.to(u.arcsec).value*g_fac)
 dx2 = (gaia['xp_2'][gns2_ga['ind_2']] - gns2['xp'][gns2_ga['ind_1']])*1e3
 dy2 = (gaia['yp_2'][gns2_ga['ind_2']] - gns2['yp'][gns2_ga['ind_1']])*1e3
 m_xy2, limx2 =  sig_cl(dx2, dy2, sig_pm)
@@ -548,4 +598,8 @@ for i in gaia['id'][gns2_ga['ind_2']][bad_xy2]:
 print(30*'☠️')
 print('bad = ',[x.tolist() for x in np.unique(bad)])
 print(30*'☠️')
+
+# %%
+
+
 

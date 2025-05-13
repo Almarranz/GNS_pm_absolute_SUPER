@@ -43,16 +43,12 @@ from astropy.modeling import models, fitting
      aligned gns_A table
  """
 
-def alg_rel(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
+def alg_loop(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
     loop = 0
     deg = 1
-    loop = 0
+    max_loop= 10
     sig_cl = 3
     comom_ls = []
-    dic_xy = {}
-    dic_Kx ={}
-    dic_xy_final = {}
-    iner_loops = 0
    
     l2_xy = np.array([gns_B[col1],gns_B[col2]]).T
     
@@ -63,27 +59,12 @@ def alg_rel(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
         comp = compare_lists(l1_xy,l2_xy,d_m)
         if len(comom_ls) >1:
             # if comom_ls[-1] < comom_ls[-2]:
-            if comom_ls[-1] <= comom_ls[-2]:
-                try:
-                    gns_A[col1] = dic_xy[f'trans_{loop-2}'][:,0]
-                    gns_A[col2] = dic_xy[f'trans_{loop-2}'][:,1]
-                    dic_xy_final['xy_deg%s'%(deg)] = np.array([dic_xy[f'trans_{loop-2}'][:,0],dic_xy[f'trans_{loop-2}'][:,1]]).T            
-                    comom_ls =[]
-                    dic_xy = {}
-                    dic_Kx = {}
-                    deg += 1
-                    print(f'Number of common star in loop {loop-1} lower tha in loop {loop-2}.\nJumpping to degree {deg} ')
-                    loop = -1
-                    continue
-                except:
-                    
-                    gns_A[col1] = dic_xy_final[f'xy_deg{deg-1}'][:,0]
-                    gns_A[col2] = dic_xy_final[f'xy_deg{deg-1}'][:,1]
-                    print(f'Number of common star with polynomial degere {deg} decreases after a single iteration.\nUsing the last iteration of degree {deg -1} ')
-                    deg = deg
-                    break
-                    
-                
+            if (comom_ls[-1] <= comom_ls[-2]) and loop >= max_loop:
+                deg += 1
+                loop = 0
+                comom_ls =[]
+                continue
+               
         comom_ls.append(len(comp))
         print(f'Common in loop {loop}, degree {deg} = %s'%(len(comp['ind_1'])))
         # if loop == 1:
@@ -204,7 +185,7 @@ def alg_rel(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
             xi = fit_xw(gns_A[col1], gns_A[col2])
             yi = fit_yw(gns_A[col1], gns_A[col2])# Fit y-coordinates
             
-        dic_xy[f'trans_{loop+1}'] = np.array([xi,yi]).T
+        
         
         # print(Kx[0][0])
         gns_A[col1] = xi
