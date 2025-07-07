@@ -58,7 +58,7 @@ plt.rcParams.update({'figure.max_open_warning': 0})# a warniing for matplot lib 
 # IPython.get_ipython().run_line_magic('matplotlib', 'auto')
 IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # %%
-field_one = 100
+field_one = 60
 chip_one = 0
 field_two = 20
 chip_two = 0
@@ -89,13 +89,13 @@ dt_gns = t2_gns - t1_gns
 # ===============================Constants=====================================
 max_sig = 0.5
 align_loop = 'yes'
+max_loop = 5
 # align_loop = 'no'
-max_sep = 90*u.mas#!!!
-max_deg = 5
+max_sep = 50*u.mas#!!!
+max_deg = 2
 # transf = 'affine'
 transf = 'similarity'
 # transf = 'polynomial'
-order_trans = 3
 # clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
 clip_in_alig = None
 bad_sig  = 3
@@ -161,7 +161,7 @@ except:
 gaia['id'] = np.arange(len(gaia))
 
 bad = []
-bad =  [15, 112, 189, 575, 689,65, 154]
+bad =  [85, 119, 150, 278, 286, 365,107]
 if len(bad)>0:#!!!
     del_1 = np.isin(gaia['id'], bad)#!!!
     gaia = gaia[np.logical_not(del_1)]#!!!
@@ -352,7 +352,7 @@ for c,cat in enumerate(catalogs):
     if align_loop  == 'yes':
         # Optional final refinement
         # gns_cat = alg_rel(gns_cat, gaia, 'xp', 'yp', align, max_deg, max_sep.to(u.arcsec).value)
-        gns_cat = alg_loop(gns_cat, gaia, 'xp', 'yp', align, max_deg, max_sep.to(u.arcsec).value)
+        gns_cat = alg_loop(gns_cat, gaia, 'xp', 'yp', align, max_deg, max_sep.to(u.arcsec).value, max_loop)
         
     elif align_loop == 'no':
         p2 = ski.transform.estimate_transform('polynomial', 
@@ -441,13 +441,14 @@ gns1 = gns1_al[gns_com['ind_1']]
 gns2 = gns2_al[gns_com['ind_2']]
 
 
-pm_x = (gns_com['l2_x'] - gns_com['l1_x'])*u.arcsec.to(u.mas)/dt_gns.to(u.yr)
-pm_y = (gns_com['l2_y'] - gns_com['l1_y'])*u.arcsec.to(u.mas)/dt_gns.to(u.yr)
+pm_x = (gns_com['l2_x']*u.arcsec - gns_com['l1_x']*u.arcsec).to(u.mas)/dt_gns.to(u.yr)
+pm_y = (gns_com['l2_y']*u.arcsec - gns_com['l1_y']*u.arcsec).to(u.mas)/dt_gns.to(u.yr)
 
 gns1['pm_xp'] = pm_x
 gns1['pm_yp'] = pm_y
 gns2['pm_xp'] = pm_x
 gns2['pm_yp'] = pm_y
+
 
 
 m_pm, lpm = sig_cl(pm_x,pm_y, sig_pm)
@@ -478,7 +479,7 @@ ax.set_xlabel('$\mu_{xp}$ [mas/yr]')
 ax2.set_xlabel('$\mu_{yp}$ [mas/yr]')
 fig.tight_layout()
 
-g_fac = 5# make the min distance 3 times bigger when comrin with Gaia
+g_fac = 1# make the min distance 3 times bigger when comrin with Gaia
 
 gns1_xy = np.array([gns1['xp'], gns1['yp']]).T
 gaia1_xy = np.array([gaia['xp_1'], gaia['yp_1']]).T
@@ -517,10 +518,10 @@ bad_xy2 = np.logical_not(m_xy2)
 
 # %
 fig, (ax,ax2, ax3) = plt.subplots(1,3, figsize =(12,4))
-
+fig.suptitle(f'Aling degree with Gaia = {max_deg-1}, Max sep = {max_sep}')
 ax.set_title('GNS-Gaia pm residuals')
 ax.scatter(dpm_x,dpm_y, color = 'k', alpha = 0.3)
-ax.scatter(dpm_xm,dpm_ym, label = '$\overline{\Delta \mu_{x}}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta \mu_{y}}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dpm_xm),np.std(dpm_xm),np.mean(dpm_ym),np.std(dpm_ym)))
+ax.scatter(dpm_xm,dpm_ym,edgecolor = 'k', label = '$\overline{\Delta \mu_{x}}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta \mu_{y}}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dpm_xm),np.std(dpm_xm),np.mean(dpm_ym),np.std(dpm_ym)))
 ax.axvline(lims[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
 ax.axvline(lims[1], color = 'r', ls = 'dashed')
 ax.axhline(lims[2], color = 'r', ls = 'dashed')
@@ -550,7 +551,7 @@ for x, y, label in zip(dx[bad_xy],
 
 ax2.set_title('GNS1-Gaia pos. residuals')
 ax2.scatter(dx,dy, color = 'k', alpha = 0.3)
-ax2.scatter(dx_m,dy_m, label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m),np.std(dx_m),np.mean(dy_m),np.std(dy_m)))
+ax2.scatter(dx_m,dy_m, edgecolor = 'k',label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m),np.std(dx_m),np.mean(dy_m),np.std(dy_m)))
 ax2.axvline(limx[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
 ax2.axvline(limx[1], color = 'r', ls = 'dashed')
 ax2.axhline(limx[2], color = 'r', ls = 'dashed')
@@ -569,7 +570,7 @@ for x, y, label in zip(dx2[bad_xy2],
 
 ax3.set_title('GNS2-Gaia pos. residuals')
 ax3.scatter(dx2,dy2, color = 'k', alpha = 0.3)
-ax3.scatter(dx_m2,dy_m2, label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m2),np.std(dx_m2),np.mean(dy_m2),np.std(dy_m2)))
+ax3.scatter(dx_m2,dy_m2,edgecolor = 'k', label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m2),np.std(dx_m2),np.mean(dy_m2),np.std(dy_m2)))
 ax3.axvline(limx2[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
 ax3.axvline(limx2[1], color = 'r', ls = 'dashed')
 ax3.axhline(limx2[2], color = 'r', ls = 'dashed')
@@ -600,6 +601,60 @@ print('bad = ',[x.tolist() for x in np.unique(bad)])
 print(30*'☠️')
 
 # %%
+
+zone =  'F20_f01_f06_H'
+
+scamp_f = '/Users/amartinez/Desktop/Projects/GNS_gd/scamp/GNS0/%s/'%(zone)
+
+try:
+    cat = Table.read(scamp_f +f'merged_{zone}_1.ocat', format = 'ascii') 
+except:
+    cat = Table.read(scamp_f +f'merged_{zone}.ocat', format = 'ascii') 
+vel_max = 50
+pm_mask = (abs(cat['PMALPHA_J2000']) <vel_max) &  (abs(cat['PMDELTA_J2000']) <vel_max) & (abs(cat['PMALPHA_J2000']) >1e-5) &  (abs(cat['PMDELTA_J2000']) >1e-5)
+cat = cat[pm_mask]
+
+cat_c = SkyCoord(ra = cat['ALPHA_J2000'], dec = cat['DELTA_J2000'], frame = 'fk5').galactic
+gns_c = SkyCoord(l = gns1['l'], b = gns1['b'], frame = 'galactic')
+
+
+
+# %
+max_seo = 50*u.mas
+idx, d2d, _ = cat_c.match_to_catalog_sky(gns_c, nthneighbor=1)
+match_mask = d2d < max_sep
+cat_m = cat[match_mask]
+gns_m = gns1[idx[match_mask]]
+
+# %
+fig, ax = plt.subplots(1,1)
+ax.scatter(cat_c.l,cat_c.b)
+ax.scatter(cat_c.l[match_mask],cat_c.b[match_mask])
+
+
+dpmx = (gns_m['pm_xp'] - cat_m['PMALPHA_J2000'])
+dpmy = (gns_m['pm_yp'] - cat_m['PMDELTA_J2000'])
+
+m_pm, lim = sig_cl(dpmx, dpmy, 3) 
+
+dpmx_m = dpmx[m_pm]
+dpmy_m = dpmy[m_pm]
+
+
+fig, ax = plt.subplots(1,1)
+
+ax.scatter(dpmx,dpmy, color = 'k', alpha = 0.3)
+ax.axvline(lims[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
+ax.scatter(dpmx_m,dpmy_m,edgecolor = 'k', label = '$\overline{\Delta \mu_{x}}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta \mu_{y}}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dpmx_m),np.std(dpmx_m),np.mean(dpmy_m),np.std(dpmy_m)))
+ax.axvline(lim[1], color = 'r', ls = 'dashed')
+ax.axhline(lim[2], color = 'r', ls = 'dashed')
+ax.axhline(lim[3], color = 'r', ls = 'dashed')
+ax.legend()
+
+
+
+
+
 
 
 

@@ -43,10 +43,10 @@ from astropy.modeling import models, fitting
      aligned gns_A table
  """
 
-def alg_loop(gns_A, gns_B,col1, col2, align_by,max_deg,d_m, f_mode = None  ) :
+def alg_loop(gns_A, gns_B,col1, col2, align_by,max_deg,d_m,max_loop, f_mode = None  ) :
     loop = 0
     deg = 1
-    max_loop= 10
+    # max_loop= 10
     sig_cl = 3
     comom_ls = []
    
