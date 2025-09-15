@@ -134,19 +134,23 @@ def filter_gns_by_percentile(gns_table, mag_col='H', err_col='dH', sl_col='sl', 
     
 
 #%%
-field_one = 60#
+field_one = 10
 chip_one = 0
-field_two = 20
+field_two = 4
 chip_two = 0
+# field_one = 'B1'
+# chip_one = 0
+# field_two = 20
+# chip_two = 0
 
 
 
 
 if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
     t1_gns = Time(['2015-06-07T00:00:00'],scale='utc')
-elif field_one == 60:
+elif field_one == 'B6':
     t1_gns = Time(['2016-06-13T00:00:00'],scale='utc')
-elif field_one ==  100:
+elif field_one ==  'B1':
     t1_gns = Time(['2016-05-20T00:00:00'],scale='utc')
 else:
     print(f'NO time detected for this field_one = {field_one}')
@@ -165,15 +169,18 @@ dt_gns = t2_gns - t1_gns
 
 
 # transf = 'affine'#!!!
-transf = 'similarity'#!!!1|
-# transf = 'polynomial'#!!!
+# transf = 'similarity'#!!!1|
+transf = 'polynomial'#!!!
 # transf = 'shift'#!!!
 order_trans = 1
-mlim = 22
-# max_sig = 0.1
-max_sig = 0.02
+# mlim = 22
+gns_mags = [12,20]
+
+max_sig = 0.05
+# max_sig = 0.
 perc = 100
-comparison_gns = 1# GNS1 or GN2 for Gaia comparison
+bin_width = 1
+
 # Arches and Quintuplet coordinates for plotting and check if it will be covered.
 # Choose Arches or Quituplet central coordinates #!!!
 # arch = SkyCoord(ra = '17h45m50.65020s', dec = '-28d49m19.51468s', equinox = 'J2000').galactic
@@ -190,8 +197,8 @@ pruebas1 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_1absolute_SUPER/pruebas/'
 pruebas2 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_2absolute_SUPER/pruebas/'
 
 
-# gns1 = Table.read(GNS_1 + 'stars_calibrated_H_chip%s.ecsv'%(chip_one),  format = 'ascii.ecsv')
-gns1 = Table.read('/Users/amartinez/Desktop/Projects/GNS_gd/scamp/lxp/GNS1/H/F06/B6_H_opti.ecsv',  format = 'ascii.ecsv')
+# gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
+gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}_old/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
 
 fig, (ax, ax2) = plt.subplots(1,2)
 ax.hist2d(gns1['H'],gns1['sl'], bins = 100,norm = LogNorm())
@@ -204,17 +211,19 @@ ax.set_xlabel('[H]')
 ax2.set_xlabel('[H]')
 fig.tight_layout()
 ax.axhline(max_sig,ls = 'dashed', color = 'r')
-ax.axvline(mlim,ls = 'dashed', color = 'r')
+ax.axvline(gns_mags[1],ls = 'dashed', color = 'r')
 
 # %%
-gns1_fil = filter_gns_by_percentile(gns1, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=0.5, percentile=perc, mag_lim = mlim)
+gns1_fil = filter_gns_by_percentile(gns1, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=bin_width, percentile=perc, mag_lim = gns_mags[1])
 
 if perc <99:
     ax.scatter(gns1_fil['H'],gns1_fil['sl'],s =0.1,color = 'k', alpha = 0.01)
+    gns1 = filter_gns_by_percentile(gns1, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=bin_width, percentile=perc, mag_lim = gns_mags[1], pos_lim = max_sig)
 
-gns1 = filter_gns_by_percentile(gns1, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=0.5, percentile=perc, mag_lim = mlim, pos_lim = 0.05)
-
-
+m1_mask = (gns1['H']>gns_mags[0]) & (gns1['H']<gns_mags[1])
+gns1 = gns1[m1_mask]
+unc_cut1 = (gns1['sl']<max_sig) & (gns1['sb']<max_sig)
+gns1 = gns1[unc_cut1]
 # %%
 # m_mask = gns1['H']<mlim
 
@@ -234,18 +243,17 @@ fig, ax = plt.subplots()
 # c = ax.pcolormesh(X, Y, statistic.T, cmap='Spectral_r', norm = LogNorm()) 
 c = ax.pcolormesh(X, Y, statistic.T, cmap='Spectral_r',vmax = 0.1) 
 fig.colorbar(c, ax=ax, label='$\sqrt {\delta l^{2} + \delta b^{2}}$ [arcsec]', shrink = 1)
-ax.set_title(f'GNS1 Max $\delta$ posit = {max_sig}. Max mag = {mlim}')
+ax.set_title(f'GNS1 Max $\delta$ posit = {max_sig}. Max mag = {gns_mags[1]}')
 ax.set_xlabel('l')
 ax.set_ylabel('b')
 ax.axis('equal')
 # sys.exit(213)
 
 # %%
-# gns2_all = np.loadtxt(GNS_2 + 'stars_calibrated_H_chip%s.txt'%(chip_two))
 
-# gns2 = Table.read(GNS_2 + 'stars_calibrated_H_chip%s.ecsv'%(chip_two), format = 'ascii')
-gns2 = Table.read('/Users/amartinez/Desktop/Projects/GNS_gd/scamp/lxp/GNS2/H/F20/20_H_opti.ecsv', format = 'ascii.ecsv')
-# gns2 = Table.read('/Users/amartinez/Desktop/Projects/GNS_gd/scamp/lxp/GNS2/H/F20/20_H_opti_fcalib.ecsv', format = 'ascii.ecsv')
+# gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}_old/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+
 
 fig, (ax, ax2) = plt.subplots(1,2)
 ax.set_title('GNS2')
@@ -258,15 +266,19 @@ ax.set_xlabel('[H]')
 ax2.set_xlabel('[H]')
 fig.tight_layout()
 ax.axhline(max_sig,ls = 'dashed', color = 'r')
-ax.axvline(mlim,ls = 'dashed', color = 'r')
+ax.axvline(gns_mags[1],ls = 'dashed', color = 'r')
+
+m2_mask = (gns2['H']>gns_mags[0]) & (gns2['H']<gns_mags[1])
+gns2 = gns2[m2_mask]
+unc_cut2 = (gns2['sl']<max_sig) & (gns2['sb']<max_sig)
+gns2 = gns2[unc_cut2]
 
 # %%
-gns2_fil = filter_gns_by_percentile(gns2, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=0.5, percentile=perc, mag_lim = mlim, pos_lim=max_sig)
+gns2_fil = filter_gns_by_percentile(gns2, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width= bin_width, percentile=perc, mag_lim =gns_mags[1], pos_lim=max_sig)
 
 if perc <99:
     ax.scatter(gns2_fil['H'],gns2_fil['sl'],s =0.1,color = 'k', alpha = 0.01)
-
-gns2 = filter_gns_by_percentile(gns2, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=0.5, percentile=perc, mag_lim = mlim)
+    gns2 = filter_gns_by_percentile(gns2, mag_col='H', err_col='dH', sl_col='sl', sb_col='sb', bin_width=0.5, percentile=perc, mag_lim = gns_mags[1], pos_lim=max_sig)
 
 
 
@@ -289,7 +301,7 @@ fig, ax = plt.subplots()
 # c = ax.pcolormesh(X, Y, statistic.T, cmap='Spectral_r',norm = LogNorm())
 c = ax.pcolormesh(X, Y, statistic.T, cmap='Spectral_r', vmax= 0.06)
 fig.colorbar(c, ax=ax, label='$\sqrt {\delta l^{2} + \delta l^{2}}$', shrink = 1)
-ax.set_title(f'GNS2 Max $\delta$ posit = {max_sig}. Max mag = {mlim}')
+ax.set_title(f'GNS2 Max $\delta$ posit = {max_sig}. Max mag = {gns_mags[1]}')
 ax.set_xlabel('l')
 ax.set_ylabel('b')
 ax.axis('equal')
@@ -334,122 +346,15 @@ ax.axis('scaled')
 # =============================================================================
 
 
-radius = abs(np.min(gns1['l'])-np.max(gns1['l']))*0.6*u.degree
-center_g = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic')
-
-try:
-    
-    gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
-    print('Gaia from table')
-except:
-    print('Gaia from web')
-    center = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic').icrs
-
-    Gaia.MAIN_GAIA_TABLE = "gaiadr3.gaia_source" # Select early Data Release 3
-    Gaia.ROW_LIMIT = -1  # it not especifty, Default rows are limited to 50. 
-    j = Gaia.cone_search_async(center, radius = abs(radius))
-    gaia = j.get_results()
-    gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
-
-
-fig_ga, (ax_ga,ax2_ga) = plt.subplots(1,2)
-ax_ga.set_title(f'GNS vs Gaia (radius = {radius.to(u.arcsec):.0f})')
-ax_ga.scatter(gns1['l'][::20], gns1['b'][::20],s =1, color = 'k', alpha = 0.2)
-# ax.scatter(gaia['ra'], gaia['dec'], label = 'All Gaia')
-ax2_ga.scatter(gaia['phot_g_mean_mag'],gaia['pmra_error'], s= 2, color = 'k', label = 'All Gaia')
-ax2_ga.scatter(gaia['phot_g_mean_mag'],gaia['pmdec_error'], s= 2, color = 'grey')
-ax_ga.invert_xaxis()
-ax2_ga.grid()
-e_pm = 0.1
-mlim_ga = 20
-gaia = filter_gaia_data(
-    gaia_table=gaia,
-    astrometric_params_solved=31,
-    duplicated_source= False,
-    parallax_over_error_min=-10,
-    astrometric_excess_noise_sig_max=2,
-    phot_g_mean_mag_min= mlim_ga,
-    phot_g_mean_mag_max=1,
-    pm_min=0,
-    pmra_error_max=e_pm,
-    pmdec_error_max=e_pm
-    )
-
-
-ax2_ga.axvline(mlim_ga, color = 'r', ls = 'dashed')
-
-t1 = Time(['2016-01-01T00:00:00'],scale='utc')
-
-
-
-
-# g_gpm = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], pm_ra_cosdec = gaia['pmra'].value*u.mas/u.yr, pm_dec = ['pmdec'].value*u.mas/u.yr, obstime = 'J2016', equinox = 'J2000', frame = 'fk5')
-ga_gpm = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], pm_ra_cosdec = gaia['pmra'],
-                 pm_dec = gaia['pmdec'], obstime = 'J2016', 
-                 equinox = 'J2000', frame = 'icrs').galactic
-
-if comparison_gns == 1:
-
-    dt = t1_gns-t1
-
-elif comparison_gns == 2:
-
-    dt = t2_gns-t1
-    
-# l_off,b_off = center_g.spherical_offsets_to(ga_gpm.frame)
-# l_offt = l_off.to(u.mas) + (ga_gpm.pm_l_cosb)*dt.to(u.yr)
-# b_offt = b_off.to(u.mas) + (ga_gpm.pm_b)*dt.to(u.yr)
-
-# ga_gtc = center_g.spherical_offsets_by(l_offt, b_offt)
-
-
-# gaia['l'] = ga_gtc.l
-# gaia['b'] = ga_gtc.b
-
-# gaia['l'] = gaia['l'] + (ga_gpm.pm_l_cosb)*dt.to(u.yr)
-# gaia['b'] = gaia['b'] + (ga_gpm.pm_b)*dt.to(u.yr)
-
-
-# %%
-gaia_c = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], 
-                  pm_ra_cosdec = gaia['pmra'], pm_dec = gaia['pmdec'],
-                  frame = 'icrs', obstime = 'J2016.0').galactic
-
-
-gaia['pm_l'] = gaia_c.pm_l_cosb
-gaia['pm_b'] = gaia_c.pm_b
-# %%
-
-ga_l = gaia_c.l.wrap_at('360.02d')
-ga_b = gaia_c.b.wrap_at('180d')
-
-ax2_ga.axhline(e_pm, color = 'red', ls = 'dashed')
-ax_ga.scatter(ga_l, gaia['b'], color = '#ff7f0e')
-
-# fig, ax = plt.subplots(1,1,figsize =(10,10))
-# ax.scatter(l1[::10], gns1['b'][::10],label = 'GNS_1 Fied %s, chip %s'%(field_one,chip_one))
-# ax.scatter(l2[::10],  gns2['b'][::10],s = 1, label = 'GNS_2 Fied %s, chip %s'%(field_two,chip_two))
-# ax.scatter(ga_l,gaia['b'], label = f'Gaia stars = {len(gaia)}')
-# ax.invert_xaxis()
-# ax.legend()
-# ax.set_xlabel('l[ deg]', fontsize = 10)
-# ax.set_ylabel('b [deg]', fontsize = 10)
-# # ax.axis('scaled')
-# ax.set_ylim(min(gaia['b']),max(gaia['b']))
-
-
-
 gns1_c = SkyCoord(l = gns1['l'], b = gns1['b'], 
                     unit = 'degree', frame = 'galactic')
 gns2_c = SkyCoord(l = gns2['l'], b = gns2['b'], 
                     unit = 'degree', frame = 'galactic')
 
-
-# %%
 # Driect alignemnet
-max_sep = 50*u.mas#!!!
+max_sep = 100*u.mas#!!!
 
-
+matches = 0
 for i in range(0):
     # idx,d2d,d3d = gns2_c.match_to_catalog_sky(gns1_c,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
     # sep_constraint = d2d < max_sep
@@ -457,7 +362,7 @@ for i in range(0):
     # gns1_m = gns1[idx[sep_constraint]]
     
     # print(f'MATCHES i = {i-1} = {len(gns2_m)}')
-    max_sep_fine = 55*u.mas
+    max_sep_fine = 30*u.mas
     idx1, idx2, sep2d, _ = search_around_sky(gns1_c, gns2_c, max_sep_fine)
 
     count1 = Counter(idx1)
@@ -483,7 +388,7 @@ for i in range(0):
     diff_H = gns2_m['H'] - gns1_m['H']
     
     diff_H = gns2_m['H']-gns1_m['H']
-    sig_cl = 2
+    sig_cl = 3
     mask_H, l_lim,h_lim = sigma_clip(diff_H, sigma=sig_cl, masked = True, return_bounds= True)
     
     gns2_m = gns2_m[mask_H.mask]
@@ -492,7 +397,7 @@ for i in range(0):
     fig,ax = plt.subplots(1,1)
     ax.hist(diff_H, bins = 'auto',histtype = 'step')
     ax.axvline(np.mean(diff_H), color = 'k', ls = 'dashed', label = 'H offset = %.2f\n$\sigma$ = %.2f'%(off_s,np.std(diff_H)))
-    ax.axvline(l_lim, ls = 'dashed', color ='r')
+    ax.axvline(l_lim, ls = 'dashed', color ='r', label = 'f{sig_cl}$\sigma$')
     ax.axvline(h_lim, ls = 'dashed', color ='r')
     ax.legend() 
     
@@ -542,8 +447,11 @@ for i in range(0):
         # Find the index of the row in the original table
         index = np.where((gns1_m_re['x'] == row['x']) & (gns1_m_re['y'] == row['y']))[0][0]
         unique_indices.append(index)
-
     
+    if matches > len(gns2_m):
+        break
+    else:
+        matches = len(gns2_m)
     print(f'MATCHES i = {i}= {len(gns2_m)}')
 
 
@@ -581,7 +489,7 @@ gns1_m= gns1[idx1_clean]
 gns2_m = gns2[idx2_clean]
 
 # %%
-sig_H = 5
+sig_H = 3
 dm = gns1_m['H'] - gns2_m['H']
 
 mH, lm, hm = sigma_clip(dm, sigma = sig_H, masked = True, return_bounds= True)
@@ -619,7 +527,7 @@ db = (gns2_m['b']- gns1_m['b'])
 pm_l = (dl.to(u.mas))/dt_gns.to(u.year)
 pm_b = (db.to(u.mas))/dt_gns.to(u.year)
 
-sig_pm = 10
+sig_pm = 3
 m_pml, l_pml, h_pml = sigma_clip(pm_l, sigma = sig_pm, masked = True, return_bounds= True)
 m_pmb, l_pmb, h_pmb = sigma_clip(pm_b, sigma = sig_pm, masked = True, return_bounds= True)
 
@@ -649,9 +557,93 @@ ax.legend()
 ax2.legend()
 
 
+# sys.exit(545)
 # %%
 
+comparison_gns = 2#!!! # GNS1 or GN2 for Gaia comparison
+radius = abs(np.min(gns1['l'])-np.max(gns1['l']))*0.6*u.degree
+center_g = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic')
+center_eq = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic').icrs
+try:
+    
+    gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+    print('Gaia from table')
+except:
+    print('Gaia from web')
+    center = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic').icrs
 
+    Gaia.MAIN_GAIA_TABLE = "gaiadr3.gaia_source" # Select early Data Release 3
+    Gaia.ROW_LIMIT = -1  # it not especifty, Default rows are limited to 50. 
+    j = Gaia.cone_search_async(center, radius = abs(radius))
+    gaia = j.get_results()
+    gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+
+
+fig_ga, (ax_ga,ax2_ga) = plt.subplots(1,2)
+ax_ga.set_title(f'GNS vs Gaia (radius = {radius.to(u.arcsec):.0f})')
+ax_ga.scatter(gns1['l'][::20], gns1['b'][::20],s =1, color = 'k', alpha = 0.2)
+# ax.scatter(gaia['ra'], gaia['dec'], label = 'All Gaia')
+ax2_ga.scatter(gaia['phot_g_mean_mag'],gaia['pmra_error'], s= 2, color = 'k', label = 'All Gaia')
+ax2_ga.scatter(gaia['phot_g_mean_mag'],gaia['pmdec_error'], s= 2, color = 'grey')
+ax_ga.invert_xaxis()
+ax2_ga.grid()
+e_pm = 0.5#!!!
+mlim_ga = 20#!!!
+gaia = filter_gaia_data(
+    gaia_table=gaia,
+    astrometric_params_solved=31,
+    duplicated_source= False,
+    parallax_over_error_min=-10,
+    astrometric_excess_noise_sig_max=2,
+    phot_g_mean_mag_min= mlim_ga,
+    phot_g_mean_mag_max=1,
+    pm_min=0,
+    pmra_error_max=e_pm,
+    pmdec_error_max=e_pm
+    )
+
+
+ax2_ga.axvline(mlim_ga, color = 'r', ls = 'dashed')
+
+t1 = Time(['2016-01-01T00:00:00'],scale='utc')
+
+
+
+
+# g_gpm = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], pm_ra_cosdec = gaia['pmra'].value*u.mas/u.yr, pm_dec = ['pmdec'].value*u.mas/u.yr, obstime = 'J2016', equinox = 'J2000', frame = 'fk5')
+ga_gpm = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], pm_ra_cosdec = gaia['pmra'],
+                 pm_dec = gaia['pmdec'], obstime = 'J2016', 
+                 equinox = 'J2000', frame = 'icrs').galactic
+
+if comparison_gns == 1:
+
+    dt = t1_gns-t1
+
+elif comparison_gns == 2:
+
+    dt = t2_gns-t1
+    
+
+
+
+# %
+gaia_c = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], 
+                  pm_ra_cosdec = gaia['pmra'], pm_dec = gaia['pmdec'],
+                  frame = 'icrs', obstime = 'J2016.0').galactic
+
+
+gaia['pm_l'] = gaia_c.pm_l_cosb
+gaia['pm_b'] = gaia_c.pm_b
+# %
+
+ga_l = gaia_c.l.wrap_at('360.02d')
+ga_b = gaia_c.b.wrap_at('180d')
+
+ax2_ga.axhline(e_pm, color = 'red', ls = 'dashed')
+ax_ga.scatter(ga_l, gaia['b'], color = '#ff7f0e')
+
+
+# %
 if comparison_gns == 1:
     gns_c = SkyCoord(l = gns1_m['l'], b = gns1_m['b'], 
                      unit = 'degree', frame = 'galactic')
@@ -660,9 +652,36 @@ if comparison_gns == 2:
                      unit = 'degree', frame = 'galactic')
 
 
-gaia_cg = SkyCoord(l = gaia['l'], b = gaia['b'], frame = 'galactic')
+# %
+# % Calculating the position of Gaia stasr
+gaia_c = SkyCoord(ra = gaia['ra'], dec = gaia['dec'],pm_ra_cosdec = gaia['pmra'],pm_dec = gaia['pmdec'], frame = 'icrs', obstime = 'J2016.0')
+
+gaia['ra'] = gaia['ra'] + gaia_c.pm_ra_cosdec*dt.to(u.yr)
+gaia['dec'] = gaia['dec'] + gaia_c.pm_dec*dt.to(u.yr)
+
+gaia_cg = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], unit = 'degree', frame = 'icrs', obstime = 'J2016.0').galactic
+
+# %
+# =============================================================================
+# gaia_ceq = SkyCoord(ra = gaia['ra'], dec = gaia['dec'],pm_ra_cosdec = gaia['pmra'],pm_dec = gaia['pmdec'], frame = 'icrs', obstime = 'J2016.0')
+# 
+# ra_off,dec_off = center_eq.spherical_offsets_to(gaia_ceq.frame)
+# ra_offt = ra_off.to(u.mas) + (gaia_ceq.pm_ra_cosdec)*dt.to(u.yr)
+# dec_offt = dec_off.to(u.mas) + (gaia_ceq.pm_dec)*dt.to(u.yr)
+# 
+# ga_gtc = center_eq.spherical_offsets_by(ra_offt, dec_offt)
+# 
+# 
+# gaia['ra'] = ga_gtc.ra
+# gaia['dec'] = ga_gtc.dec
+# 
+# gaia_cg = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], frame = 'icrs', obstime = 'J2016.0').galactic
+# =============================================================================
+
+
+# %
 # Gaia comparison
-max_sep_ga =20*u.mas
+max_sep_ga =45*u.mas#!!!
 # idx,d2d,d3d = gaia_c.match_to_catalog_sky(gns_cg,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
 # sep_constraint = d2d < max_sep_ga
 # gaia_m = gaia[sep_constraint]
@@ -732,19 +751,21 @@ axh2.legend()
 # plt.savefig('/Users/amartinez/Desktop/for_people/for_Rainer/hist.png', transparent=True,bbox_inches = 'tight')
 # %
 N = 100
+# %
 fig, (ax,ax2) = plt.subplots(1,2)
 ax.scatter(gns1['l'][::N], gns1['b'][::N], color = 'k', alpha = 0.1)
-ax.scatter(gaia_m['l'][m_dpm], gaia_m['b'][m_dpm],label = f'Gaia {sig_gaia}$\sigma clipped$' )
 ax.scatter(gaia_m['l'], gaia_m['b'], label = 'All Gaia matches')
+ax.scatter(gaia_m['l'][~m_dpm], gaia_m['b'][np.logical_not(m_dpm)],label = f'Gaia {sig_gaia}$\sigma clipped$', marker = 'x' )
 ax.axis('equal')
 ax.legend()
 ax2.scatter(gns2['l'][::N], gns2['b'][::N], color = 'k', alpha = 0.1)
-ax2.scatter(gaia_m['l'][m_dpm], gaia_m['b'][m_dpm],label = f'Gaia {sig_gaia}$\sigma clipped$' )
 ax2.scatter(gaia_m['l'], gaia_m['b'], label = 'All Gaia matches')
+ax2.scatter(gaia_m['l'][~m_dpm], gaia_m['b'][~m_dpm],label = f'Gaia {sig_gaia}$\sigma clipped$', marker = 'x' )
 ax2.axis('equal')
 ax2.legend()
 fig.tight_layout()
 
+# %
 # %
 
 
@@ -784,6 +805,7 @@ axg.tick_params(axis='both', labelsize=12)
 
 # %
 # 
+# mta = {'Title': 'v-p.png','script': '/Users/amartinez/Desktop/PhD/HAWK/GNS_pm_scripts/GNS_pm_absolute_SUPER/SUPER_alignment.py'}
 # plt.savefig('/Users/amartinez/Desktop/for_people/for_Rainer/v-p.png', transparent=True, bbox_inches = 'tight')
 sys.exit(730)
 # %%
@@ -838,6 +860,60 @@ ax.scatter(gns1['l'][::N], gns1['b'][::N], color = 'white', alpha = 0.01)
 ax.scatter(gaia_m['l'], gaia_m['b'], label = 'All Gaia matches')
 ax.axis('equal')
 ax.legend()
+# %%
+
+# Comparison with VVV
+vvv = Table.read('/Users/amartinez/Desktop/PhD/Catalogs/VVV/b333/PMS/b333.dat', format = 'ascii')
+
+
+ok_mask = vvv['ok'] > 0
+vvv = vvv[ok_mask]
+vvv_c = SkyCoord(ra = vvv['ra'], dec = vvv['dec'], unit = 'degree', equinox = 'J2000')
+ 
+
+max_sep = 50*u.mas
+idx,d2d,d3d = vvv_c.match_to_catalog_sky(gns_c,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 match
+sep_constraint = d2d < max_sep
+vvv_m= vvv[sep_constraint]
+cat_m = gns_c[idx[sep_constraint]]
+
+
+fig, ax = plt.subplots(1,1)
+
+ax.scatter(gns_c.ra,gns_c.dec, label = 'GNS')
+ax.scatter(vvv_m['ra'], vvv_m['dec'], label = 'VVV')
+ax.legend()
+
+
+# mux_d = (cat_m['ALPHA_J2000'] - vvv_m['ra'])*3600*1000
+# muy_d = (cat_m['DELTA_J2000'] - vvv_m['dec'])*3600*1000
+mux_d = cat_m['PMALPHA_J2000'] - vvv_m['pmRA']
+muy_d = cat_m['PMDELTA_J2000'] - vvv_m['pmDEC']
+
+sig_cl = 3
+mask_x, lx_lim,hx_lim = sigma_clip(mux_d, sigma=sig_cl, masked = True, return_bounds= True)
+mask_y, ly_lim,hy_lim = sigma_clip(muy_d, sigma=sig_cl, masked = True, return_bounds= True)
+
+# mask_xy = mask_x & mask_y # mask_xy = np.logical(mx, my)
+mask_xy = np.logical_and(np.logical_not(mask_x.mask), np.logical_not(mask_y.mask))
+
+mux_dc = mux_d[mask_xy]
+muy_dc = muy_d[mask_xy]
+
+fig, (ax,ax2) = plt.subplots(1,2)
+ax.set_title('GNS vs VVVV')
+
+ax.hist(mux_dc, histtype  = 'step', label = r'$\mu_{x}$ = %.2f,$\sigma$ = %.2f'%(np.mean(mux_dc),np.std(mux_dc)))
+ax2.hist(muy_dc, histtype  = 'step',label = r'$\mu_{y}$ = %.2f,$\sigma$ = %.2f'%(np.mean(muy_dc),np.std(muy_dc)))
+# ax.hist(mux_d,color = 'k', alpha = 0.2)
+# ax2.hist(muy_d,color = 'k', alpha = 0.2)
+
+# ax.axvline(lx_lim, ls = 'dashed', color ='r')
+# ax.axvline(hx_lim, ls = 'dashed', color ='r')
+# ax2.axvline(ly_lim, ls = 'dashed', color ='r')
+# ax2.axvline(hy_lim, ls = 'dashed', color ='r')
+ax.legend()
+ax2.legend()
 
 
 
