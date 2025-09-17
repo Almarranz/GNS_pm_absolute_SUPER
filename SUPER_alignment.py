@@ -7,7 +7,8 @@ Created on Sun Nov 27 16:19:45 2022
 """
 
 # Generates the GNS1 second reduction with the Ks and H magnitudes
-
+import sys
+sys.path.append("/Users/amartinez/Desktop/pythons_imports/")
 import numpy as np
 import matplotlib.pyplot as plt
 import astroalign as aa
@@ -453,40 +454,45 @@ for i in range(0):
     else:
         matches = len(gns2_m)
     print(f'MATCHES i = {i}= {len(gns2_m)}')
+    
+    sys.exit(458)
 
-
-# idx,d2d,d3d = gns2_c.match_to_catalog_sky(gns1_c,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
-# sep_constraint = d2d < max_sep
-# gns2_m = gns2[sep_constraint]
-# gns1_m_re = gns1[idx[sep_constraint]]
+idx,d2d,d3d = gns2_c.match_to_catalog_sky(gns1_c,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
+sep_constraint = d2d < max_sep
+gns2_m = gns2[sep_constraint]
+gns1_m_re = gns1[idx[sep_constraint]]
 
 # gns1_m = unique(gns1_m_re, keep = 'none')
+gns1_m = unique(gns1_m_re, keep = 'first')
 
-# unique_indices = []
-# for row in gns1_m:
-#     # Find the index of the row in the original table
-#     index = np.where((gns1_m_re['x'] == row['x']) & (gns1_m_re['y'] == row['y']))[0][0]
-#     unique_indices.append(index)
+unique_indices = []
+for row in gns1_m:
+    # Find the index of the row in the original table
+    index = np.where((gns1_m_re['x'] == row['x']) & (gns1_m_re['y'] == row['y']))[0][0]
+    unique_indices.append(index)
 
-# gns2_m = gns2_m[unique_indices]
+gns2_m = gns2_m[unique_indices]
 
-idx1, idx2, sep2d, _ = search_around_sky(gns1_c, gns2_c, max_sep)
-
-count1 = Counter(idx1)
-count2 = Counter(idx2)
-
-# Step 3: Create mask for one-to-one matches only
-mask_unique = np.array([
-    count1[i1] == 1 and count2[i2] == 1
-    for i1, i2 in zip(idx1, idx2)
-])
-
-# Step 4: Apply the mask
-idx1_clean = idx1[mask_unique]
-idx2_clean = idx2[mask_unique]
-
-gns1_m= gns1[idx1_clean]
-gns2_m = gns2[idx2_clean]
+# sys.exit(475)
+# =============================================================================
+# idx1, idx2, sep2d, _ = search_around_sky(gns1_c, gns2_c, max_sep)
+# 
+# count1 = Counter(idx1)
+# count2 = Counter(idx2)
+# 
+# # Step 3: Create mask for one-to-one matches only
+# mask_unique = np.array([
+#     count1[i1] == 1 and count2[i2] == 1
+#     for i1, i2 in zip(idx1, idx2)
+# ])
+# 
+# # Step 4: Apply the mask
+# idx1_clean = idx1[mask_unique]
+# idx2_clean = idx2[mask_unique]
+# 
+# gns1_m= gns1[idx1_clean]
+# gns2_m = gns2[idx2_clean]
+# =============================================================================
 
 # %%
 sig_H = 3
@@ -557,7 +563,7 @@ ax.legend()
 ax2.legend()
 
 
-# sys.exit(545)
+sys.exit(545)
 # %%
 
 comparison_gns = 2#!!! # GNS1 or GN2 for Gaia comparison
@@ -682,29 +688,29 @@ gaia_cg = SkyCoord(ra = gaia['ra'], dec = gaia['dec'], unit = 'degree', frame = 
 # %
 # Gaia comparison
 max_sep_ga =45*u.mas#!!!
-# idx,d2d,d3d = gaia_c.match_to_catalog_sky(gns_cg,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
-# sep_constraint = d2d < max_sep_ga
-# gaia_m = gaia[sep_constraint]
-# gg_m = gns1_m[idx[sep_constraint]]
+idx,d2d,d3d = gaia_c.match_to_catalog_sky(gns_c,nthneighbor=1)# ,nthneighbor=1 is for 1-to-1 matchsep_constraint = d2d < max_sep
+sep_constraint = d2d < max_sep_ga
+gaia_m = gaia[sep_constraint]
+gg_m = gns1_m[idx[sep_constraint]]
 
-idx1, idx2, sep2d, _ = search_around_sky(gaia_cg, gns_c, max_sep_ga)
+# idx1, idx2, sep2d, _ = search_around_sky(gaia_cg, gns_c, max_sep_ga)
 
-count1 = Counter(idx1)
-count2 = Counter(idx2)
+# count1 = Counter(idx1)
+# count2 = Counter(idx2)
 
-# Step 3: Create mask for one-to-one matches only
-mask_unique = np.array([
-    count1[i1] == 1 and count2[i2] == 1
-    for i1, i2 in zip(idx1, idx2)
-])
+# # Step 3: Create mask for one-to-one matches only
+# mask_unique = np.array([
+#     count1[i1] == 1 and count2[i2] == 1
+#     for i1, i2 in zip(idx1, idx2)
+# ])
 
-# Step 4: Apply the mask
-idx1_clean = idx1[mask_unique]
-idx2_clean = idx2[mask_unique]
+# # Step 4: Apply the mask
+# idx1_clean = idx1[mask_unique]
+# idx2_clean = idx2[mask_unique]
 
-# Optional: Extract matched tables
-gaia_m= gaia[idx1_clean]
-gg_m = gns1_m[idx2_clean]
+# # Optional: Extract matched tables
+# gaia_m= gaia[idx1_clean]
+# gg_m = gns1_m[idx2_clean]
 
 ax2_ga.scatter(gaia_m['phot_g_mean_mag'],gaia_m['pmra_error'], s= 2, color = 'blue', label = 'Gaia matches')
 ax2_ga.scatter(gaia_m['phot_g_mean_mag'],gaia_m['pmdec_error'], s= 2, color = 'cyan')

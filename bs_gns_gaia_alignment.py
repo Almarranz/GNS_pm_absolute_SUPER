@@ -11,6 +11,21 @@ Created on Sun Dec 11 10:30:27 2022
 
 # Here we are going to align GNS (1 and 2) to Gaia reference frame for the 
 # each of tha gns epochs
+
+# =============================================================================
+# NOTE:
+#     
+#     use in the terminal with the command:
+#         
+#         cat loops_ls.txt | parallel -j 10 "python bs_SUPER_alignment.py {}"
+# 
+# In order to generate the lits
+#    
+#    seq 1 500 > loops_ls.txt
+# =============================================================================
+
+
+
 import sys
 sys.path.append("/Users/amartinez/Desktop/pythons_imports/")
 
@@ -68,20 +83,22 @@ rc('font',**{'family':'serif','serif':['Palatino']})
 plt.rcParams.update({'figure.max_open_warning': 0})# a warniing for matplot lib pop up because so many plots, this turining it of
 # Enable automatic plotting mode
 # IPython.get_ipython().run_line_magic('matplotlib', 'auto')
-IPython.get_ipython().run_line_magic('matplotlib', 'inline')
+# IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # %%
 # field_one = 10
 # chip_one = 0
 # field_two = 4
 # chip_two = 0
-# field_one = 'B1'
-# chip_one = 0
-# field_two = 20
-# chip_two = 0
-field_one = 16
+
+field_one = 'B1'
 chip_one = 0
-field_two = 7
+field_two = 20
 chip_two = 0
+
+# field_one = 16
+# chip_one = 0
+# field_two = 7
+# chip_two = 0
 
 
 if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
@@ -106,8 +123,20 @@ else:
 dt_gns = t2_gns - t1_gns
 
 # %%
+def sig_cl(x, y,s):
+    mx, lx, hx = sigma_clip(x , sigma = s, masked = True, return_bounds= True)
+    my, ly, hy = sigma_clip(y , sigma = s, masked = True, return_bounds= True)
+    m_xy = np.logical_and(np.logical_not(mx.mask),np.logical_not(my.mask))
+    
+    return m_xy, [lx,hx,ly,hy]
 # ===============================Constants=====================================
 
+bs_loop = sys.argv[1]
+# bs_loop =   1
+
+print(10*'⭐')
+print(f'loop = {bs_loop} ')
+print(10*'⭐')
 # =============================================================================
 # Quality cuts
 # =============================================================================
@@ -151,8 +180,8 @@ mag_min_gaia = 20#!!!
 # =============================================================================
 # Clustering 
 # =============================================================================
-look_for_cluster = 'yes'
-# look_for_cluster = 'no'
+# look_for_cluster = 'yes'
+look_for_cluster = 'no'
 
 # =============================================================================
 
@@ -162,10 +191,15 @@ GNS_2='/Users/amartinez/Desktop/PhD/HAWK/GNS_2/lists/%s/chip%s/'%(field_two, chi
 pruebas1 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_1absolute_SUPER/pruebas/'
 # pruebas2 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_2absolute_SUPER/pruebas/'
 
+bs1 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_1absolute_SUPER/bootstrapping/'
+bs2 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_2absolute_SUPER/bootstrapping/'
+
 bad = []
 lopping = 1
+count = 0
 # for loop in range(1):
 while lopping > 0:
+    count += 1
     gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
     gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
@@ -211,11 +245,14 @@ while lopping > 0:
     gns2['xp'] = xg_2.to(u.arcsec)
     gns2['yp'] = yg_2.to(u.arcsec)
     
+    
+    
+    # if count == 1:
     radius = abs(np.min(gns1['l'])-np.max(gns1['l']))*1*u.degree
     # %
     try:
         
-        gaia = Table.read(pruebas1  + 'NOOOOO___gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+        gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
         print('Gaia from table')
     except:
         print('Gaia from web')
@@ -226,15 +263,22 @@ while lopping > 0:
         j = Gaia.cone_search_async(center, radius = abs(radius))
         gaia = j.get_results()
         os.makedirs(pruebas1, exist_ok=True)
-        # gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
-    
+        gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+        
     gaia['id'] = np.arange(len(gaia))
     
-   
-    # bad =  [3, 75, 76, 119, 129, 157, 220, 275, 301, 371, 553, 656]
-    # bad =  [3, 19, 75, 76, 119, 129, 157, 220, 275, 301, 371, 450, 553, 656]
+    buenos_gaia = (gaia['l']>min(gns1['l'])) & (gaia['l']<max(gns1['l'])) & (gaia['b']>min(gns1['b'])) & (gaia['b']<max(gns1['b']))
     
-
+    gaia = gaia[buenos_gaia]
+    
+    N = len(gaia)
+    
+    # Bootstrap: sample N indices with replacement
+    bs_idx = np.random.randint(0, N, size=N)
+    
+    # New bootstrap sample table
+    gaia = gaia[bs_idx]
+        
      
     if len(bad)>0:#!!!
         del_1 = np.isin(gaia['id'], bad)#!!!
@@ -285,16 +329,8 @@ while lopping > 0:
     
     tg = Time(['2016-01-01T00:00:00'],scale='utc')
     
+
     
-    
-    # %%
-    
-    def sig_cl(x, y,s):
-        mx, lx, hx = sigma_clip(x , sigma = s, masked = True, return_bounds= True)
-        my, ly, hy = sigma_clip(y , sigma = s, masked = True, return_bounds= True)
-        m_xy = np.logical_and(np.logical_not(mx.mask),np.logical_not(my.mask))
-        
-        return m_xy, [lx,hx,ly,hy]
     
     # Define catalogs and times as a list of tuples
     catalogs = [
@@ -334,74 +370,61 @@ while lopping > 0:
         gaia[f'yp_{c+1}'] = yp_g.to(u.arcsec) 
          
     
-        # xp_g, yp_g = center.spherical_offsets_to(gaia_lb.frame)
-        # gaia['xp'] = xp_g.to(u.arcsec) + gaia_lb.pm_l_cosb * dt.to(u.yr)
-        # gaia['yp'] = yp_g.to(u.arcsec) + gaia_lb.pm_b * dt.to(u.yr)
-        
-        # gaia[f'xp_{c+1}'] = xp_g.to(u.arcsec) + gaia_lb.pm_l_cosb * dt.to(u.yr)
-        # gaia[f'yp_{c+1}'] = yp_g.to(u.arcsec) + gaia_lb.pm_b * dt.to(u.yr)
-    
-        # ga_gtc = center.spherical_offsets_by(gaia['xp'], gaia['yp'])
-        # gaia[f'l{cat["tag"]}'] = ga_gtc.l
-        # gaia[f'b{cat["tag"]}'] = ga_gtc.b
-    
         gns_cat = cat['gns']
         gaia_c = SkyCoord(l=gaia[f'l{cat["tag"]}'], b=gaia[f'b{cat["tag"]}'], frame='galactic')
         gns_c = SkyCoord(l=gns_cat['l'], b=gns_cat['b'], frame='galactic')
-        
-        idx1, idx2, sep2d, _ = search_around_sky(gaia_c, gns_c, max_sep)
-
-        count1 = Counter(idx1)
-        count2 = Counter(idx2)
-
-        # Step 3: Create mask for one-to-one matches only
-        mask_unique = np.array([
-            count1[i1] == 1 and count2[i2] == 1
-            for i1, i2 in zip(idx1, idx2)
-        ])
-
-        # Step 4: Apply the mask
-        idx1_clean = idx1[mask_unique]
-        idx2_clean = idx2[mask_unique]
-
-        gaia_m= gaia[idx1_clean]
-        gns_m = gns_cat[idx2_clean]
-
-
-        print(40*'+')
-        unicos = unique(gns_m, keep = 'first')
-        print(len(gns_m),len(unicos))
-        print(40*'+')
+    
+        idx, d2d, _ = gaia_c.match_to_catalog_sky(gns_c, nthneighbor=1)
+        match_mask = d2d < max_sep
+        gaia_m = gaia[match_mask]
+        gns_m = gns_cat[idx[match_mask]]
         
 # =============================================================================
-#         idx, d2d, _ = gaia_c.match_to_catalog_sky(gns_c, nthneighbor=1)
-#         match_mask = d2d < max_sep
-#         gaia_m = gaia[match_mask]
-#         gns_m = gns_cat[idx[match_mask]]
+#         idx1, idx2, sep2d, _ = search_around_sky(gaia_c, gns_c, max_sep)
+# 
+#         count1 = Counter(idx1)
+#         count2 = Counter(idx2)
+# 
+#         # Step 3: Create mask for one-to-one matches only
+#         mask_unique = np.array([
+#             count1[i1] == 1 and count2[i2] == 1
+#             for i1, i2 in zip(idx1, idx2)
+#         ])
+# 
+#         # Step 4: Apply the mask
+#         idx1_clean = idx1[mask_unique]
+#         idx2_clean = idx2[mask_unique]
+# 
+#         gaia_m= gaia[idx1_clean]
+#         gns_m = gns_cat[idx2_clean]
+# 
+# 
 #         print(40*'+')
 #         unicos = unique(gns_m, keep = 'first')
 #         print(len(gns_m),len(unicos))
 #         print(40*'+')
-#     
+#         
+#         
 # =============================================================================
-        ga_w = gaia_c.l.wrap_at('360.1d')
-        gns_w = gns_c.l.wrap_at('360.1d')
+        
+        
+        ga_w = gaia_c.l.wrap_at('360.5d')
+        gns_w = gns_c.l.wrap_at('360.5d')
         
         fig, (ax, ax1, ax2) = plt.subplots(1,3, figsize = (15,5))
         fig.suptitle(f'GNS{c+1}')
         # ax.scatter(gns_w[::100], gns_cat['b'][::100], alpha =0.1, color = 'k')
         # ax.scatter(ga_w, gaia['b'], label = 'Gaia', s= 10)
         ax.scatter(gns_cat['l'][::10], gns_cat['b'][::10], alpha =0.1, color = 'k')
+        ax.scatter(gaia['l'], gaia['b'], label = 'Gaia', s= 10)
         ax.set_title(f'Matches = {len(gns_m)}\nMin dist = {max_sep} ')
         ax.scatter(gns_m['l'], gns_m['b'], label = f'GNS{c} Match')
         ax.scatter(gaia_m['l'], gaia_m['b'],s =10, label = 'Gaia Match')
         ax.set_xlabel('l')
         ax.set_ylabel('b')
         ax.legend()
-        
-        # pl = ski.transform.estimate_transform(
-        #     transf, np.array([gns_m['xp'], gns_m['yp']]).T,
-        #     np.array([gaia_m['xp'], gaia_m['yp']]).T, order=order_trans)
+       
+        # sys.exit(374)
     
         # Fit transform
         if transf == 'polynomial':
@@ -507,7 +530,7 @@ while lopping > 0:
         ax2.set_ylabel('yp [arcsec]')
         ax2.legend()
         fig.tight_layout()
-        plt.show()
+        # plt.show()
         # Residuals
         gns_xy = np.array([gns_cat['xp'], gns_cat['yp']]).T
         gaia_xy = np.array([gaia['xp'], gaia['yp']]).T
@@ -543,7 +566,7 @@ while lopping > 0:
         
         cat['gns']['xp'] =  gns_cat['xp']
         cat['gns']['yp'] =  gns_cat['yp']
-        plt.show()
+        # plt.show()
     
     
     
@@ -634,7 +657,7 @@ while lopping > 0:
     ax.set_xlabel('$\mu_{xp}$ [mas/yr]')
     ax2.set_xlabel('$\mu_{yp}$ [mas/yr]')
     fig.tight_layout()
-    plt.show()
+    # plt.show()
     
     g_fac = 1# make the min distance 3 times bigger when comrin with Gaia
     
@@ -642,12 +665,7 @@ while lopping > 0:
     gaia1_xy = np.array([gaia['xp_1'], gaia['yp_1']]).T
     gns1_ga = compare_lists(gns1_xy, gaia1_xy, max_sep_ls[0].to(u.arcsec).value*g_fac)
     
-    fig, ax = plt.subplots(1,1)
-    ax.set_title('Gaia matches %s'%(len(gaia['l'][gns1_ga['ind_2']])))
-    ax.scatter(gns1['l'], gns1['b'], color = 'k', alpha = 0.01)
-    ax.scatter(gaia['l'][gns1_ga['ind_2']], gaia['b'][gns1_ga['ind_2']])
-    ax.invert_xaxis()
-    ax.axis('equal')
+ 
     
     dpm_x = (gaia['pm_l'][gns1_ga['ind_2']] - gns1['pm_xp'][gns1_ga['ind_1']]) 
     dpm_y = (gaia['pm_b'][gns1_ga['ind_2']] - gns1['pm_yp'][gns1_ga['ind_1']])
@@ -745,7 +763,7 @@ while lopping > 0:
     ax3.set_ylabel('$\Delta$x [mas]')
     
     fig.tight_layout()
-    plt.show()
+    # plt.show()
     # %%
     # bad = []
     
@@ -774,6 +792,13 @@ while lopping > 0:
     print('bad = ',[x.tolist() for x in np.unique(bad)])
     # print('bad = ',[x.tolist() for x in np.unique(bad)])
     print(30*'☠️')
+    
+gns1['ID'] = np.arange(len(gns1))
+gns2['ID'] = np.arange(len(gns2))
+
+gns1['xp','yp','ID','l','b'].write(bs1 + f'BS{bs_loop}_gns1_Super_F1_{field_one}_F2_{field_two}.txt', format = 'ascii', overwrite = True)
+gns2['xp','yp','ID','l','b'].write(bs2 + f'BS{bs_loop}_gns2_Super_F1_{field_one}_F2_{field_two}.txt', format = 'ascii', overwrite = True)
+
 # %%
 
 
