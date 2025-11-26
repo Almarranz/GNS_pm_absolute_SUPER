@@ -74,14 +74,21 @@ IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # chip_one = 0
 # field_two = 4
 # chip_two = 0
-# field_one = 'B1'
-# chip_one = 0
-# field_two = 20
-# chip_two = 0
-field_one = 16
+
+field_one = 'B1'
 chip_one = 0
-field_two = 7
+field_two = 20
 chip_two = 0
+
+# field_one = 'D12'
+# chip_one = 0
+# field_two = 1
+# chip_two = 0
+
+# field_one = 16
+# chip_one = 0
+# field_two = 7
+# chip_two = 0
 
 
 if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
@@ -90,6 +97,8 @@ elif field_one == 'B6':
     t1_gns = Time(['2016-06-13T00:00:00'],scale='utc')
 elif field_one ==  'B1':
     t1_gns = Time(['2016-05-20T00:00:00'],scale='utc')
+elif field_one ==  'D12':
+    t1_gns = Time(['2017-06-03T00:00:00'],scale='utc')
 else:
     print(f'NO time detected for this field_one = {field_one}')
     sys.exit()
@@ -99,6 +108,8 @@ elif field_two == 4:
     t2_gns = Time(['2022-04-05T00:00:00'],scale='utc')
 elif field_two == 20:
     t2_gns = Time(['2022-07-25T00:00:00'],scale='utc')
+elif field_two == 1:
+    t2_gns = Time(['2021-09-17T00:00:00'],scale='utc')
 else:
     print(f'NO time detected for this field_two = {field_two}')
     sys.exit()
@@ -111,12 +122,15 @@ dt_gns = t2_gns - t1_gns
 # =============================================================================
 # Quality cuts
 # =============================================================================
-max_sig = 0.5
+max_sig = 0.05
 
 
 # =============================================================================
 # Alignment params
 # =============================================================================
+rebfacI = 1
+rebfacII = 1
+
 align_loop = 'yes'
 # align_loop = 'no'
 max_loop = 5
@@ -125,12 +139,12 @@ align = 'Polywarp'
 # f_mode = 'WnC'
 sep_both = 50
 max_sep_ls = [sep_both*u.mas,sep_both*u.mas]#!!!
-max_deg = 1# If this is <2 it does not enter the alignment loop. 
-# transf = 'affine'
-# transf = 'similarity'
-transf = 'polynomial'
-# transf = 'Weight'
-order_trans =2
+max_deg = 4# If this is <2 it does not enter the alignment loop. 
+
+trans_ls = ['polynomial','affine','similarity','Weight']
+transf = trans_ls[0]
+pre_transf = trans_ls[0]
+order_trans =1
 # clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
 clip_in_alig = None
 
@@ -148,11 +162,12 @@ e_pm_gns =1# im mas/yr
 # =============================================================================+
 e_pm_gaia = 0.3#!!!
 mag_min_gaia = 20#!!!
+e_pos_gaia = None
 # =============================================================================
 # Clustering 
 # =============================================================================
-look_for_cluster = 'yes'
-# look_for_cluster = 'no'
+# look_for_cluster = 'yes'
+look_for_cluster = 'no'
 
 # =============================================================================
 
@@ -160,17 +175,17 @@ GNS_1='/Users/amartinez/Desktop/PhD/HAWK/GNS_1/lists/%s/chip%s/'%(field_one, chi
 GNS_2='/Users/amartinez/Desktop/PhD/HAWK/GNS_2/lists/%s/chip%s/'%(field_two, chip_two)
 
 pruebas1 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_1absolute_SUPER/pruebas/'
-# pruebas2 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_2absolute_SUPER/pruebas/'
+pruebas2 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_2absolute_SUPER/pruebas/'
 
 bad = []
 lopping = 1
 # for loop in range(1):
 while lopping > 0:
-    gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
-    gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
+    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
-    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}_old/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
-    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}_old/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+    gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
+    gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
     
     buenos1 = (gns1['l']>min(gns2['l'])) & (gns1['l']<max(gns2['l'])) & (gns1['b']>min(gns2['b'])) & (gns1['b']<max(gns2['b']))
     gns1 = gns1[buenos1]
@@ -268,7 +283,9 @@ while lopping > 0:
         phot_g_mean_mag_max=None,
         pm_min=0,
         pmra_error_max=e_pm_gaia,
-        pmdec_error_max=e_pm_gaia
+        pmdec_error_max=e_pm_gaia,
+        ra_error_max=e_pos_gaia,
+        dec_error_max= e_pos_gaia
         )
     
     
@@ -287,7 +304,7 @@ while lopping > 0:
     
     
     
-    # %%
+    # %
     
     def sig_cl(x, y,s):
         mx, lx, hx = sigma_clip(x , sigma = s, masked = True, return_bounds= True)
@@ -366,7 +383,15 @@ while lopping > 0:
 
         gaia_m= gaia[idx1_clean]
         gns_m = gns_cat[idx2_clean]
-
+        
+        # Number of rows to select
+        n = 25
+        
+        # Randomly choose 25 indices without replacement
+        idx = np.random.choice(len(gaia), size=n, replace=False)
+        
+        # Subtable with the same structure and column names
+        gaia_25 = gaia[idx]
 
         print(40*'+')
         unicos = unique(gns_m, keep = 'first')
@@ -399,10 +424,107 @@ while lopping > 0:
         ax.set_ylabel('b')
         ax.legend()
         
-        # pl = ski.transform.estimate_transform(
-        #     transf, np.array([gns_m['xp'], gns_m['yp']]).T,
-        #     np.array([gaia_m['xp'], gaia_m['yp']]).T, order=order_trans)
-    
+# =============================================================================
+#         # Apply a similiraty trasnformation fisrt
+#         Does not make much of a difference
+# =============================================================================
+        
+        if pre_transf == 'similarity':
+            psim = ski.transform.estimate_transform(
+            pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
+                np.array([gaia_m['l'], gaia_m['b']]).T)
+        
+        # if pre_transf == 'affine':
+        #     psim = ski.transform.estimate_transform(
+        #     pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
+        #         np.array([gaia_m['l'], gaia_m['b']]).T)
+        
+        else:
+            psim = ski.transform.estimate_transform(
+            pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
+                np.array([gaia_m['l'], gaia_m['b']]).T, order = 1)
+            
+        gns_sim = psim(np.array([gns_cat['l'], gns_cat['b']]).T)
+        gns_cat['l'] = gns_sim[:, 0]*u.deg
+        gns_cat['b'] = gns_sim[:, 1]*u.deg
+        
+        ns_cat = cat['gns']
+        gaia_c = SkyCoord(l=gaia[f'l{cat["tag"]}'], b=gaia[f'b{cat["tag"]}'], frame='galactic')
+        gns_c = SkyCoord(l=gns_cat['l'], b=gns_cat['b'], frame='galactic')
+        
+        idx1, idx2, sep2d, _ = search_around_sky(gaia_c, gns_c, max_sep)
+
+        count1 = Counter(idx1)
+        count2 = Counter(idx2)
+
+        # Step 3: Create mask for one-to-one matches only
+        mask_unique = np.array([
+            count1[i1] == 1 and count2[i2] == 1
+            for i1, i2 in zip(idx1, idx2)
+        ])
+
+        # Step 4: Apply the mask
+        idx1_clean = idx1[mask_unique]
+        idx2_clean = idx2[mask_unique]
+
+        gaia_m= gaia[idx1_clean]
+        gns_m = gns_cat[idx2_clean]
+
+
+        print(40*'+')
+        unicos = unique(gns_m, keep = 'first')
+        print(len(gns_m),len(unicos))
+        print(40*'+')
+# %%
+        
+
+# =============================================================================
+#         This are the position residuals BEFORE any transformation
+# =============================================================================
+        if c == 0:        
+            rcParams.update({
+            "figure.figsize": (10, 5),
+            "font.size": 18,
+            "axes.labelsize": 18,
+            "xtick.labelsize": 16,
+            "ytick.labelsize": 16,
+            "legend.fontsize": 16
+        })
+            dl_pre = gns_m['l'].to(u.mas) - gaia_m['l'].to(u.mas)
+            db_pre = gns_m['b'].to(u.mas) - gaia_m['b'].to(u.mas)
+            m_pre, pre_lims = sig_cl(dl_pre, db_pre, 3)
+            dl_prem = dl_pre[m_pre]
+            db_prem = db_pre[m_pre]
+            
+            fig_pre, (ax_pre, ax1_pre) = plt.subplots(1,2,figsize = (11,5.5))
+            #
+            ax_pre.set_title(f'Gaia vs GNS{c+1} (Stars = {len(gaia_m)})')
+            # ax1.set_title(f'Matching stars  = {len(d_xm)}')
+            ax_pre.set_ylabel('# stars')
+            ax_pre.hist(dl_pre, bins = 10,  color = 'grey', alpha = 0.5)
+            ax1_pre.hist(db_pre, bins = 'auto',  color = 'grey', alpha = 0.5)
+            ax_pre.hist(dl_prem, bins = 10, histtype = 'step',lw = 2,label = '$\overline{\Delta l}$ = %.2f\n$\sigma$ = %.2f'%(np.mean(dl_prem.value),np.std(dl_prem.value)))
+            ax1_pre.hist(db_prem,bins = 'auto',histtype = 'step', lw = 2, label = '$\overline{\Delta b}$ = %.2f\n$\sigma$ = %.2f'%(np.mean(db_prem.value),np.std(db_prem.value)))
+            ax_pre.legend(loc = 1)
+            ax1_pre.legend()
+            ax_pre.set_xlabel('$\Delta$l [mas]')
+            ax1_pre.set_xlabel('$\Delta$b [mas]')
+            ax_pre.axvline(pre_lims[0].value, color = 'r', ls = 'dashed')
+            ax_pre.axvline(pre_lims[1].value, color = 'r', ls = 'dashed')
+            ax1_pre.axvline(pre_lims[2].value, color = 'r', ls = 'dashed')
+            ax1_pre.axvline(pre_lims[3].value, color = 'r', ls = 'dashed')
+            # ax_pre.set_xlim(-20,20)
+            # ax1_pre.set_xlim(-20,20)
+            fig_pre.tight_layout()
+            
+            meta = {'Script': '/Users/amartinez/Desktop/PhD/HAWK/GNS_pm_scripts/GNS_pm_absolute_SUPER/gns_gaia_alignment.py'}
+            # plt.savefig(f'/Users/amartinez/Desktop/PhD/My_papers/GNS_pm_catalog/images/ABS_F1_{field_one}_gaia_resi_pos_prealign.png', dpi = 150, transparent = True, metadata = meta)
+
+        # continue
+        # sys.exit(442)
+# %%
+        
+
         # Fit transform
         if transf == 'polynomial':
             p = ski.transform.estimate_transform(
@@ -608,6 +730,28 @@ while lopping > 0:
     gns2['dpm_x'] = dpm_x
     gns2['dpm_y'] = dpm_y
     
+    
+    
+    gns1.meta['Gaia_sep'] = sep_both*u.mas
+    gns1.meta['m_lim_gns'] = m_lim
+    gns1.meta['max_dis_pm'] = max_dis_pm
+    gns1.meta['e_pm_gaia'] = e_pm_gaia
+    gns1.meta['mag_min_gaia'] = mag_min_gaia
+    
+# =============================================================================
+#     Save the catlogs with the pm
+# =============================================================================
+    gns1.write(pruebas1 + f'gns1_pmSuper_F1_{field_one}_F2_{field_two}.ecvs',format = 'ascii.ecsv', overwrite = True)
+    gns2.write(pruebas2 + f'gns2_pmSuper_F1_{field_one}_F2_{field_two}.ecvs',format = 'ascii.ecsv', overwrite = True)
+    
+    
+
+
+    
+    # gns2.meta['f_mode'] = f_mode
+
+
+    
     gns1 = filter_gns_data(gns1, max_e_pm = e_pm_gns)
     gns2 = filter_gns_data(gns2, max_e_pm = e_pm_gns)
 
@@ -746,6 +890,43 @@ while lopping > 0:
     
     fig.tight_layout()
     plt.show()
+    
+    # %%
+    rcParams.update({
+    "figure.figsize": (10, 5),
+    "font.size": 18,
+    "axes.labelsize": 18,
+    "xtick.labelsize": 16,
+    "ytick.labelsize": 16,
+    "legend.fontsize": 16
+})
+    fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10, 5))
+
+    ax.hist(dpm_x, histtype='step', bins='auto', lw=2,
+            label='$\overline{\Delta \mu_{l}}$ = %.2f'
+                  '\n$\sigma_b$ = %.2f' % 
+                  (np.mean(dpm_x), np.std(dpm_x)))
+    
+    ax2.hist(dpm_y, histtype='step', bins='auto', lw=2,
+             label='$\overline{\Delta \mu_{b}}$ = %.2f'
+                   '\n$\sigma_l$ = %.2f' % 
+                   (np.mean(dpm_y), np.std(dpm_y)))
+    
+    ax.set_xlabel(r'$\Delta \mu_{l}$ [mas/yr]')
+    ax2.set_xlabel(r'$\Delta \mu_{b}$ [mas/yr]')
+    ax.set_ylabel('# stars')
+    ax.set_xlim(-3,3)
+    ax2.set_xlim(-3,3)
+    ax.legend(loc=1)
+    ax2.legend(loc=1)
+    
+    fig.tight_layout()
+
+    meta = {'Script': '/Users/amartinez/Desktop/PhD/HAWK/GNS_pm_scripts/GNS_pm_absolute_SUPER/gns_gaia_alignment.py'}
+    # plt.savefig(f'/Users/amartinez/Desktop/PhD/My_papers/GNS_pm_catalog/images/ABS_F1_{field_one}_gaia_resi_pm.png', dpi = 150, transparent = True, metadata = meta)
+
+
+        
     # %%
     # bad = []
     
@@ -767,6 +948,7 @@ while lopping > 0:
         
         lopping = 0
         print('no  more 3sigmas')
+        gaia[gns1_ga['ind_2']].write(pruebas1  + f'gaia_refstars_F{field_one}_F{field_two}.txt', format = 'ascii', overwrite = True)
         # sys.exit('no  more 3sigmas')
     
     print(30*'☠️')
@@ -774,6 +956,26 @@ while lopping > 0:
     print('bad = ',[x.tolist() for x in np.unique(bad)])
     # print('bad = ',[x.tolist() for x in np.unique(bad)])
     print(30*'☠️')
+    
+values = [len(gns1_ga),
+      np.mean(dpm_x), np.std(dpm_x),
+      np.mean(dpm_y), np.std(dpm_y)]
+
+filepath = pruebas1 + 'alignment_stimation.txt'
+
+# Check if file already exists
+file_exists = os.path.isfile(filepath)
+
+# Open in append mode
+with open(filepath, 'a') as f:
+    # If file didn't exist, write header
+    if not file_exists:
+        header = "num_gaia mean_dpm_x std_dpm_x mean_dpm_y std_dpm_y\n"
+        f.write(header)
+
+    # Write the new line
+    line = " ".join(map(str, values)) + "\n"
+    f.write(line)
 # %%
 
 

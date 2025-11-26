@@ -17,7 +17,7 @@ Created on Sun Dec 11 10:30:27 2022
 #     
 #     use in the terminal with the command:
 #         
-#         cat loops_ls.txt | parallel -j 10 "python bs_SUPER_alignment.py {}"
+#         cat loops_ls.txt | parallel -j 10 "python bs_gns_gaia_alignment.py {}"
 # 
 # In order to generate the lits
 #    
@@ -90,15 +90,15 @@ plt.rcParams.update({'figure.max_open_warning': 0})# a warniing for matplot lib 
 # field_two = 4
 # chip_two = 0
 
-field_one = 'B1'
-chip_one = 0
-field_two = 20
-chip_two = 0
-
-# field_one = 16
+# field_one = 'B1'
 # chip_one = 0
-# field_two = 7
+# field_two = 20
 # chip_two = 0
+
+field_one = 16
+chip_one = 0
+field_two = 7
+chip_two = 0
 
 
 if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
