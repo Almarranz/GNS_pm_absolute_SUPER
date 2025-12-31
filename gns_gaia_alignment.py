@@ -42,6 +42,7 @@ from astropy.modeling.fitting import LinearLSQFitter
 from astropy.modeling import models, fitting
 from astropy.coordinates import search_around_sky
 from collections import Counter
+from sys import exit as stop
 # %%plotting parametres
 from matplotlib import rc
 from matplotlib import rcParams
@@ -75,10 +76,10 @@ IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # field_two = 4
 # chip_two = 0
 
-field_one = 'B1'
-chip_one = 0
-field_two = 20
-chip_two = 0
+# field_one = 'B1'
+# chip_one = 0
+# field_two = 20
+# chip_two = 0
 
 # field_one = 'D12'
 # chip_one = 0
@@ -91,6 +92,12 @@ chip_two = 0
 # chip_two = 0
 
 
+field_one = 'D19'
+chip_one = 0
+field_two = 16
+chip_two = 0
+
+
 if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
     t1_gns = Time(['2015-06-07T00:00:00'],scale='utc')
 elif field_one == 'B6':
@@ -99,9 +106,12 @@ elif field_one ==  'B1':
     t1_gns = Time(['2016-05-20T00:00:00'],scale='utc')
 elif field_one ==  'D12':
     t1_gns = Time(['2017-06-03T00:00:00'],scale='utc')
+elif field_one ==  'D19':
+    t1_gns = Time(['2018-05-21T00:00:00'],scale='utc')
 else:
     print(f'NO time detected for this field_one = {field_one}')
     sys.exit()
+
 if field_two == 7 or field_two == 5:
     t2_gns = Time(['2022-05-27T00:00:00'],scale='utc')
 elif field_two == 4:
@@ -110,6 +120,8 @@ elif field_two == 20:
     t2_gns = Time(['2022-07-25T00:00:00'],scale='utc')
 elif field_two == 1:
     t2_gns = Time(['2021-09-17T00:00:00'],scale='utc')
+elif field_two == 16:
+    t2_gns = Time(['2022-08-14T00:00:00'],scale='utc')
 else:
     print(f'NO time detected for this field_two = {field_two}')
     sys.exit()
@@ -139,11 +151,11 @@ align = 'Polywarp'
 # f_mode = 'WnC'
 sep_both = 50
 max_sep_ls = [sep_both*u.mas,sep_both*u.mas]#!!!
-max_deg = 4# If this is <2 it does not enter the alignment loop. 
+max_deg = 3# If this is <2 it does not enter the alignment loop. 
 
 trans_ls = ['polynomial','affine','similarity','Weight']
 transf = trans_ls[0]
-pre_transf = trans_ls[0]
+pre_transf = trans_ls[2]# Pre transformation
 order_trans =1
 # clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
 clip_in_alig = None
@@ -155,14 +167,14 @@ m_lim = [12,18]
 # ===========================================================================
 max_dis_pm = 0.150#in arcsec
 sig_H = 3# discrd pm for stars with delta H over sig_H
-e_pm_gns =1# im mas/yr
+e_pm_gns =0.5# im mas/yr
 
 # =============================================================================
 # Gaia Settings 
-# =============================================================================+
-e_pm_gaia = 0.3#!!!
-mag_min_gaia = 20#!!!
-e_pos_gaia = None
+# ============================================================================+
+e_pm_gaia = 0.5#!!!
+mag_min_gaia = 18#!!!
+e_pos_gaia = 0.3
 # =============================================================================
 # Clustering 
 # =============================================================================
@@ -186,6 +198,9 @@ while lopping > 0:
     
     gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
     gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
+    
+    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}_VVV.ecsv',  format = 'ascii.ecsv')
+    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}_VVV.ecsv', format = 'ascii.ecsv')
     
     buenos1 = (gns1['l']>min(gns2['l'])) & (gns1['l']<max(gns2['l'])) & (gns1['b']>min(gns2['b'])) & (gns1['b']<max(gns2['b']))
     gns1 = gns1[buenos1]
@@ -230,7 +245,10 @@ while lopping > 0:
     # %
     try:
         
-        gaia = Table.read(pruebas1  + 'NOOOOO___gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+        gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+        # gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r400.ecsv'%(field_one,field_two))
+        
+        # gaia = Table.read('/Users/amartinez/Desktop/PhD/HAWK/GNS_1relative_SUPER/pruebas/gaia_f1D19_f216_r269.ecsv')
         print('Gaia from table')
     except:
         print('Gaia from web')
@@ -241,7 +259,7 @@ while lopping > 0:
         j = Gaia.cone_search_async(center, radius = abs(radius))
         gaia = j.get_results()
         os.makedirs(pruebas1, exist_ok=True)
-        # gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+        gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value), overwrite = True)
     
     gaia['id'] = np.arange(len(gaia))
     
@@ -285,10 +303,24 @@ while lopping > 0:
         pmra_error_max=e_pm_gaia,
         pmdec_error_max=e_pm_gaia,
         ra_error_max=e_pos_gaia,
-        dec_error_max= e_pos_gaia
+        dec_error_max= e_pos_gaia,
+        ruwe = 1.4
         )
-    
-    
+
+# =============================================================================
+# This elimanates random Gaia stars
+# =============================================================================
+# =============================================================================
+#     cut_gaia = int(len(gaia)*0.70)
+#     idx_cut= np.random.choice(len(gaia), size=cut_gaia, replace=False)
+# 
+#     # Subtable with the same structure and column names
+#     gaia= gaia[idx_cut]
+# =============================================================================
+# =============================================================================
+# This elimanates random Gaia stars
+# =============================================================================
+  
     gaia_lb = SkyCoord(ra = gaia['ra'], dec = gaia['dec'],
                        pm_ra_cosdec = gaia['pmra'],
                        pm_dec = gaia['pmdec'], 
@@ -326,15 +358,29 @@ while lopping > 0:
         dt = cat['time'] - Time('2016-01-01T00:00:00', scale='utc')
     
         # Recalculate Gaia projected positions at catalog's epoch
+        
+        
+        
         gaia_lb = SkyCoord(
             ra=gaia['ra'], dec=gaia['dec'],
             pm_ra_cosdec=gaia['pmra'], pm_dec=gaia['pmdec'],
             frame='icrs', obstime='J2016'
         ).galactic
         
+        gaia_rd = SkyCoord(
+            ra=gaia['ra'], dec=gaia['dec'],
+            pm_ra_cosdec=gaia['pmra'], pm_dec=gaia['pmdec'],
+            frame='icrs', obstime='J2016'
+        )
+        
+        gaia_rd
+        
         
         gaia_l = gaia_lb.l + gaia_lb.pm_l_cosb*dt.to(u.yr)
         gaia_b = gaia_lb.b + gaia_lb.pm_b*dt.to(u.yr)
+        
+        # gaia_l = gaia_lb.l 
+        # gaia_b = gaia_lb.b 
         
         
         gaia_lbt = SkyCoord(l = gaia_l, b = gaia_b, frame = 'galactic')
@@ -384,15 +430,9 @@ while lopping > 0:
         gaia_m= gaia[idx1_clean]
         gns_m = gns_cat[idx2_clean]
         
-        # Number of rows to select
-        n = 25
+       
         
-        # Randomly choose 25 indices without replacement
-        idx = np.random.choice(len(gaia), size=n, replace=False)
         
-        # Subtable with the same structure and column names
-        gaia_25 = gaia[idx]
-
         print(40*'+')
         unicos = unique(gns_m, keep = 'first')
         print(len(gns_m),len(unicos))
@@ -429,25 +469,30 @@ while lopping > 0:
 #         Does not make much of a difference
 # =============================================================================
         
-        if pre_transf == 'similarity':
-            psim = ski.transform.estimate_transform(
-            pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
-                np.array([gaia_m['l'], gaia_m['b']]).T)
-        
-        # if pre_transf == 'affine':
-        #     psim = ski.transform.estimate_transform(
-        #     pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
-        #         np.array([gaia_m['l'], gaia_m['b']]).T)
-        
-        else:
-            psim = ski.transform.estimate_transform(
-            pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
-                np.array([gaia_m['l'], gaia_m['b']]).T, order = 1)
-            
-        gns_sim = psim(np.array([gns_cat['l'], gns_cat['b']]).T)
-        gns_cat['l'] = gns_sim[:, 0]*u.deg
-        gns_cat['b'] = gns_sim[:, 1]*u.deg
-        
+# =============================================================================
+#         if pre_transf == 'similarity':
+#             psim = ski.transform.estimate_transform(
+#             pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
+#                 np.array([gaia_m['l'], gaia_m['b']]).T)
+#         
+#         # if pre_transf == 'affine':
+#         #     psim = ski.transform.estimate_transform(
+#         #     pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
+#         #         np.array([gaia_m['l'], gaia_m['b']]).T)
+#         
+#         else:
+#             psim = ski.transform.estimate_transform(
+#             pre_transf, np.array([gns_m['l'], gns_m['b']]).T,
+#                 np.array([gaia_m['l'], gaia_m['b']]).T, order = 1)
+#             
+#         gns_sim = psim(np.array([gns_cat['l'], gns_cat['b']]).T)
+#         gns_cat['l'] = gns_sim[:, 0]*u.deg
+#         gns_cat['b'] = gns_sim[:, 1]*u.deg
+# =============================================================================
+# =============================================================================
+#         # Apply a similiraty trasnformation fisrt
+#         Does not make much of a difference
+# =============================================================================
         ns_cat = cat['gns']
         gaia_c = SkyCoord(l=gaia[f'l{cat["tag"]}'], b=gaia[f'b{cat["tag"]}'], frame='galactic')
         gns_c = SkyCoord(l=gns_cat['l'], b=gns_cat['b'], frame='galactic')
@@ -469,6 +514,9 @@ while lopping > 0:
 
         gaia_m= gaia[idx1_clean]
         gns_m = gns_cat[idx2_clean]
+        
+        # Number of rows to select
+       
 
 
         print(40*'+')
@@ -521,7 +569,7 @@ while lopping > 0:
             # plt.savefig(f'/Users/amartinez/Desktop/PhD/My_papers/GNS_pm_catalog/images/ABS_F1_{field_one}_gaia_resi_pos_prealign.png', dpi = 150, transparent = True, metadata = meta)
 
         # continue
-        # sys.exit(442)
+        stop(561)
 # %%
         
 
@@ -901,7 +949,8 @@ while lopping > 0:
     "legend.fontsize": 16
 })
     fig, (ax, ax2) = plt.subplots(1, 2, figsize=(10, 5))
-
+    
+    ax.set_title(f'# Gaia = {len(dpm_x)} ')
     ax.hist(dpm_x, histtype='step', bins='auto', lw=2,
             label='$\overline{\Delta \mu_{l}}$ = %.2f'
                   '\n$\sigma_b$ = %.2f' % 
