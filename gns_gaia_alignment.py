@@ -76,16 +76,16 @@ IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # field_two = 4
 # chip_two = 0
 
-# field_one = 'B1'
-# chip_one = 0
-# field_two = 20
-# chip_two = 0
+field_one = 'B1'
+chip_one = 0
+field_two = 20
+chip_two = 0
 
 # field_one = 'D12'
-field_one = 'D13'
-chip_one = 0
-field_two = 1
-chip_two = 0
+# # field_one = 'D13'
+# chip_one = 0
+# field_two = 1
+# chip_two = 0
 
 # field_one = 16
 # chip_one = 0
@@ -170,13 +170,13 @@ m_lim = [12,18]
 # ===========================================================================
 max_dis_pm = 0.150#in arcsec
 sig_H = 3# discrd pm for stars with delta H over sig_H
-e_pm_gns = 0.5# im mas/yr
+e_pm_gns = 1.5# im mas/yr
 
 # =============================================================================
 # Gaia Settings 
 # ============================================================================+
 e_pm_gaia = 0.3#!!!
-mag_min_gaia = 22#!!!
+mag_min_gaia = 18#!!!
 e_pos_gaia = 0.5
 # =============================================================================
 # Clustering 
@@ -195,15 +195,17 @@ pruebas2 = '/Users/amartinez/Desktop/PhD/HAWK/GNS_2absolute_SUPER/pruebas/'
 bad = []
 lopping = 1
 # for loop in range(1):
+wloop_counter = 0
 while lopping > 0:
+    
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
-    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
-    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+    gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
+    gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
-    gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
-    gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
+    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
+    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
     
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}_VVV.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}_VVV.ecsv', format = 'ascii.ecsv')
@@ -836,75 +838,104 @@ while lopping > 0:
     gaia1_xy = np.array([gaia['xp_1'], gaia['yp_1']]).T
     gns1_ga = compare_lists(gns1_xy, gaia1_xy, max_sep_ls[0].to(u.arcsec).value*g_fac)
     
-    fig, ax = plt.subplots(1,1)
-    ax.set_title('Gaia matches %s'%(len(gaia['l'][gns1_ga['ind_2']])))
-    ax.scatter(gns1['l'], gns1['b'], color = 'k', alpha = 0.01)
-    ax.scatter(gaia['l'][gns1_ga['ind_2']], gaia['b'][gns1_ga['ind_2']])
-    ax.invert_xaxis()
-    ax.axis('equal')
-    
-    dpm_x = (gaia['pm_l'][gns1_ga['ind_2']] - gns1['pm_xp'][gns1_ga['ind_1']]) 
-    dpm_y = (gaia['pm_b'][gns1_ga['ind_2']] - gns1['pm_yp'][gns1_ga['ind_1']])
-    m_pm, lims = sig_cl(dpm_x, dpm_y, sig_pm)
-    dpm_xm = dpm_x[m_pm]
-    dpm_ym = dpm_y[m_pm]
-    bad_pm = np.logical_not(m_pm)
-    
-    
-    
-      
-    dx = (gaia['xp_1'][gns1_ga['ind_2']] - gns1['xp'][gns1_ga['ind_1']])*1e3
-    dy = (gaia['yp_1'][gns1_ga['ind_2']] - gns1['yp'][gns1_ga['ind_1']])*1e3    
-    m_xy, limx =  sig_cl(dx, dy, sig_pm)
-    dx_m = dx[m_xy]
-    dy_m = dy[m_xy]
-    bad_xy = np.logical_not(m_xy)
-    # if len(bad) > 0:
-    #     max_bad = np.argmax(np.sqrt(dx2_bad**2 + dy2_bad**2))
-    #     ax.scatter(dx2_bad[max_bad], dy2_bad[max_bad], facecolor = 'none', s = 200, color = 'k')
-    #     # del_1 = np.isin(gaia['id'], bad_gaia)#!!!
-    #     del_1 = np.isin(gaia['id'], bad_gaia[max_bad])#!!!
-    #     gaia = gaia[np.logical_not(del_1)]#!!!
-    
-    
-    
     gns2_xy = np.array([gns2['xp'], gns2['yp']]).T
     gaia2_xy = np.array([gaia['xp_2'], gaia['yp_2']]).T
     gns2_ga = compare_lists(gns2_xy, gaia2_xy, max_sep_ls[1].to(u.arcsec).value*g_fac)
+    
+    fig, axm = plt.subplots(1,1)
+    axm.set_title('Loop %s. Gaia matches %s'%(wloop_counter, len(gaia['l'][gns1_ga['ind_2']])))
+    axm.scatter(gns1['l'], gns1['b'], color = 'k', alpha = 0.01)
+    axm.scatter(gaia['l'][gns1_ga['ind_2']], gaia['b'][gns1_ga['ind_2']])
+    axm.invert_xaxis()
+    axm.axis('equal')
+    
+   
+    
+   
+    dpm_x = (gaia['pm_l'][gns1_ga['ind_2']] - gns1['pm_xp'][gns1_ga['ind_1']]) 
+    dpm_y = (gaia['pm_b'][gns1_ga['ind_2']] - gns1['pm_yp'][gns1_ga['ind_1']])
+    m_pm, lims = sig_cl(dpm_x, dpm_y, sig_pm)
+    
+    bad_pm = np.logical_not(m_pm)
+    dpm_xm_bad = dpm_x[bad_pm]
+    dpm_ym_bad = dpm_y[bad_pm]
+    bad_gaia_pm = gaia[gns1_ga['ind_2']][bad_pm]
+    
+    bad_loop = len(bad)
+    
+    if len(bad_gaia_pm) > 0:
+        max_bad_pm = np.argmax(np.sqrt(dpm_xm_bad**2 + dpm_ym_bad**2))
+        bad_gaia_pm = bad_gaia_pm[max_bad_pm]
+        bad.append(bad_gaia_pm['id'])
+        axm.scatter(bad_gaia_pm['l'], bad_gaia_pm['b'], facecolor = 'none', s = 200, color = 'red', label = f'GNS1 pm {sig_pm}$\sigma$')
+        axm.annotate(bad_gaia_pm['id'], (bad_gaia_pm['l'], bad_gaia_pm['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
+    
+   
+    dx = (gaia['xp_1'][gns1_ga['ind_2']] - gns1['xp'][gns1_ga['ind_1']])*1e3
+    dy = (gaia['yp_1'][gns1_ga['ind_2']] - gns1['yp'][gns1_ga['ind_1']])*1e3    
+    m_xy, limx =  sig_cl(dx, dy, sig_pm)
+    bad_xy = np.logical_not(m_xy)
+    dx_bad = dx[bad_xy]
+    dy_bad = dy[bad_xy]
+    bad_gaia_xy = gaia[gns1_ga['ind_2']][bad_xy]
+    
+    if len(bad_gaia_xy) > 0:
+        max_bad_xy = np.argmax(np.sqrt(dx_bad**2 + dy_bad**2))
+        bad_gaia_xy = bad_gaia_xy[max_bad_xy]
+        bad.append(bad_gaia_xy['id'])
+        axm.scatter(bad_gaia_xy['l'], bad_gaia_xy['b'], marker = 'x', s = 200, color = 'red', label = f'GNS1 xy {sig_pm}$\sigma$')
+        axm.annotate(bad_gaia_xy['id'], (bad_gaia_xy['l'], bad_gaia_xy['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
+    
+    
     dx2 = (gaia['xp_2'][gns2_ga['ind_2']] - gns2['xp'][gns2_ga['ind_1']])*1e3
     dy2 = (gaia['yp_2'][gns2_ga['ind_2']] - gns2['yp'][gns2_ga['ind_1']])*1e3
     m_xy2, limx2 =  sig_cl(dx2, dy2, sig_pm)
-    dx_m2 = dx2[m_xy2]
-    dy_m2 = dy2[m_xy2]
     bad_xy2 = np.logical_not(m_xy2)
+    dx2_bad = dx[bad_xy2]
+    dy2_bad = dy[bad_xy2]
+    bad_gaia_xy2 = gaia[gns1_ga['ind_2']][bad_xy2]
+    
+    if len(bad_gaia_xy2) > 0:
+        max_bad_xy2 = np.argmax(np.sqrt(dx2_bad**2 + dy2_bad**2))
+        bad_gaia_xy2 = bad_gaia_xy2[max_bad_xy2]
+        bad.append(bad_gaia_xy2['id'])
+        axm.scatter(bad_gaia_xy2['l'], bad_gaia_xy2['b'], marker = '+', s = 200, color = 'red', label = f'GNS2 xy {sig_pm}$\sigma$')
     
     
+    axm.legend()
     
+    # if len(dpm_xm_bad) > 0:
+    #     max_bad = np.argmax(np.sqrt(dpm_xm_bad**2 + dpm_ym_bad**2))
+    #     ax.scatter(bad_gaia_pm['l'], bad_gaia_pm['b'], facecolor = 'none', s = 200, color = 'red')
+    #     ax.scatter(bad_gaia_xy['l'], bad_gaia_xy['b'], marker = 'x', s = 200, color = 'red')
+    #     ax.scatter(bad_gaia_xy2['l'], bad_gaia_xy2['b'], marker = '+', s = 200, color = 'red')
+    #     del_1 = np.isin(gaia['id'], bad_gaia_pm[max_bad]['id'])#!!!
+    #     gaia = gaia[np.logical_not(del_1)]#!!!
+     
     
-    # %
-    fig, (ax,ax2, ax3) = plt.subplots(1,3, figsize =(20,7))
+    fig, (ax1,ax2, ax3) = plt.subplots(1,3, figsize =(20,7))
     fig.suptitle(f'Aling degree with Gaia = {max_deg-1}, Max sep = {max_sep_ls}, Stars = {len(dpm_x)}')
-    ax.set_title('GNS-Gaia pm residuals')
-    ax.scatter(dpm_x,dpm_y, color = 'k', alpha = 0.3)
-    ax.scatter(dpm_xm,dpm_ym,edgecolor = 'k', label = '$\overline{\Delta \mu_{x}}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta \mu_{y}}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dpm_xm),np.std(dpm_xm),np.mean(dpm_ym),np.std(dpm_ym)))
-    ax.axvline(lims[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
-    ax.axvline(lims[1], color = 'r', ls = 'dashed')
-    ax.axhline(lims[2], color = 'r', ls = 'dashed')
-    ax.axhline(lims[3], color = 'r', ls = 'dashed')
+    ax1.set_title('GNS-Gaia pm residuals')
+    ax1.scatter(dpm_x,dpm_y, color = 'k', alpha = 0.3)
+    # ax.scatter(dpm_xm,dpm_ym,edgecolor = 'k', label = '$\overline{\Delta \mu_{x}}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta \mu_{y}}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dpm_xm),np.std(dpm_xm),np.mean(dpm_ym),np.std(dpm_ym)))
+    ax1.axvline(lims[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
+    ax1.axvline(lims[1], color = 'r', ls = 'dashed')
+    ax1.axhline(lims[2], color = 'r', ls = 'dashed')
+    ax1.axhline(lims[3], color = 'r', ls = 'dashed')
     
     
     for x, y, label in zip(dpm_x[bad_pm],
                            dpm_y[bad_pm],
                            gaia['id'][gns1_ga['ind_2']][bad_pm]):
         print(x, y, label )
-        ax.annotate(str(label), xy=(x, y), xytext=(1,1), textcoords='offset points',
+        ax1.annotate(str(label), xy=(x, y), xytext=(1,1), textcoords='offset points',
                     fontsize=15, color='black')
     
     # ax.annotate(36, (5,5))
-    ax.legend(fontsize =15)
-    ax.axis('equal')
-    ax.set_xlabel('$\Delta \mu_{x}$ [mas/yr]')
-    ax.set_ylabel('$\Delta \mu_{y}$ [mas/yr]')
+    ax1.legend(fontsize =15)
+    ax1.axis('equal')
+    ax1.set_xlabel('$\Delta \mu_{x}$ [mas/yr]')
+    ax1.set_ylabel('$\Delta \mu_{y}$ [mas/yr]')
     
     for x, y, label in zip(dx[bad_xy],
                            dy[bad_xy],
@@ -916,7 +947,7 @@ while lopping > 0:
     
     ax2.set_title('GNS1-Gaia pos. residuals')
     ax2.scatter(dx,dy, color = 'k', alpha = 0.3)
-    ax2.scatter(dx_m,dy_m, edgecolor = 'k',label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m),np.std(dx_m),np.mean(dy_m),np.std(dy_m)))
+    # ax2.scatter(dx_m,dy_m, edgecolor = 'k',label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m),np.std(dx_m),np.mean(dy_m),np.std(dy_m)))
     ax2.axvline(limx[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
     ax2.axvline(limx[1], color = 'r', ls = 'dashed')
     ax2.axhline(limx[2], color = 'r', ls = 'dashed')
@@ -935,7 +966,7 @@ while lopping > 0:
     
     ax3.set_title('GNS2-Gaia pos. residuals')
     ax3.scatter(dx2,dy2, color = 'k', alpha = 0.3)
-    ax3.scatter(dx_m2,dy_m2,edgecolor = 'k', label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m2),np.std(dx_m2),np.mean(dy_m2),np.std(dy_m2)))
+    # ax3.scatter(dx_m2,dy_m2,edgecolor = 'k', label = '$\overline{\Delta x}$ = %.2f, $\sigma$ = %.2f\n''$\overline{\Delta y}$ = %.2f, $\sigma$ = %.2f'%(np.mean(dx_m2),np.std(dx_m2),np.mean(dy_m2),np.std(dy_m2)))
     ax3.axvline(limx2[0], color = 'r', ls = 'dashed', label = f'{sig_pm}$\sigma$')
     ax3.axvline(limx2[1], color = 'r', ls = 'dashed')
     ax3.axhline(limx2[2], color = 'r', ls = 'dashed')
@@ -946,9 +977,11 @@ while lopping > 0:
     ax3.set_ylabel('$\Delta$x [mas]')
     
     fig.tight_layout()
-    plt.show()
+    plt.show()  
     
-    stop(944)
+        
+ 
+   
     # %%
     rcParams.update({
     "figure.figsize": (10, 5),
@@ -989,17 +1022,13 @@ while lopping > 0:
     # %%
     # bad = []
     
-    bad_loop = len(bad)
     
-    for i in (gaia['id'][gns1_ga['ind_2']][bad_pm]):
-        bad.append(i)
-        
-    for i in (gaia['id'][gns1_ga['ind_2']][bad_xy]):
-        bad.append(i)
-    for i in (gaia['id'][gns2_ga['ind_2']][bad_xy2]):
-        bad.append(i)
-    
-
+     
+    print(30*'☠️')
+    print(bad_loop, len(bad))
+    print('bad = ',[x.tolist() for x in np.unique(bad)])
+    # print('bad = ',[x.tolist() for x in np.unique(bad)])
+    print(30*'☠️')
         
     bad = list(np.unique(bad))
     
@@ -1010,12 +1039,9 @@ while lopping > 0:
         gaia[gns1_ga['ind_2']].write(pruebas1  + f'gaia_refstars_F{field_one}_F{field_two}.txt', format = 'ascii', overwrite = True)
         # sys.exit('no  more 3sigmas')
     
-    print(30*'☠️')
-    print(bad_loop, len(bad))
-    print('bad = ',[x.tolist() for x in np.unique(bad)])
-    # print('bad = ',[x.tolist() for x in np.unique(bad)])
-    print(30*'☠️')
+    wloop_counter += 1
     
+# stop(973)
 values = [len(gns1_ga),
       np.mean(dpm_x), np.std(dpm_x),
       np.mean(dpm_y), np.std(dpm_y)]
