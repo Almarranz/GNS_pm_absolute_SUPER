@@ -82,9 +82,10 @@ IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # chip_two = 0
 
 # field_one = 'D12'
-# chip_one = 0
-# field_two = 1
-# chip_two = 0
+field_one = 'D13'
+chip_one = 0
+field_two = 1
+chip_two = 0
 
 # field_one = 16
 # chip_one = 0
@@ -92,10 +93,10 @@ IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # chip_two = 0
 
 
-field_one = 'D19'
-chip_one = 0
-field_two = 16
-chip_two = 0
+# field_one = 'D19'
+# chip_one = 0
+# field_two = 16
+# chip_two = 0
 
 
 if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
@@ -106,6 +107,8 @@ elif field_one ==  'B1':
     t1_gns = Time(['2016-05-20T00:00:00'],scale='utc')
 elif field_one ==  'D12':
     t1_gns = Time(['2017-06-03T00:00:00'],scale='utc')
+elif field_one ==  'D13':
+    t1_gns = Time(['2017-06-24T00:00:00'],scale='utc')
 elif field_one ==  'D19':
     t1_gns = Time(['2018-05-21T00:00:00'],scale='utc')
 else:
@@ -143,20 +146,20 @@ max_sig = 0.05
 rebfacI = 1
 rebfacII = 1
 
-align_loop = 'yes'
-# align_loop = 'no'
-max_loop = 5
+# align_loop = 'yes'
+align_loop = 'no'
+max_loop = 10
 align = 'Polywarp'
 # align = '2DPoly'
 # f_mode = 'WnC'
-sep_both = 50
-max_sep_ls = [sep_both*u.mas,sep_both*u.mas]#!!!
+sep_both = [50,50]
+max_sep_ls = [sep_both[0]*u.mas,sep_both[1]*u.mas]#!!!
 max_deg = 3# If this is <2 it does not enter the alignment loop. 
 
 trans_ls = ['polynomial','affine','similarity','Weight']
 transf = trans_ls[0]
-pre_transf = trans_ls[2]# Pre transformation
-order_trans =1
+# pre_transf = trans_ls[2]# Pre transformation
+order_trans = 1
 # clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
 clip_in_alig = None
 
@@ -167,14 +170,14 @@ m_lim = [12,18]
 # ===========================================================================
 max_dis_pm = 0.150#in arcsec
 sig_H = 3# discrd pm for stars with delta H over sig_H
-e_pm_gns =0.5# im mas/yr
+e_pm_gns = 0.5# im mas/yr
 
 # =============================================================================
 # Gaia Settings 
 # ============================================================================+
-e_pm_gaia = 0.5#!!!
-mag_min_gaia = 18#!!!
-e_pos_gaia = 0.3
+e_pm_gaia = 0.3#!!!
+mag_min_gaia = 22#!!!
+e_pos_gaia = 0.5
 # =============================================================================
 # Clustering 
 # =============================================================================
@@ -195,6 +198,9 @@ lopping = 1
 while lopping > 0:
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+    
+    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
+    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
     gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
     gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
@@ -264,8 +270,6 @@ while lopping > 0:
     gaia['id'] = np.arange(len(gaia))
     
    
-    # bad =  [3, 75, 76, 119, 129, 157, 220, 275, 301, 371, 553, 656]
-    # bad =  [3, 19, 75, 76, 119, 129, 157, 220, 275, 301, 371, 450, 553, 656]
     
 
      
@@ -359,13 +363,18 @@ while lopping > 0:
     
         # Recalculate Gaia projected positions at catalog's epoch
         
+    
+        # gaia_lb = SkyCoord(
+        #     ra=gaia['ra'], dec=gaia['dec'],
+        #     pm_ra_cosdec=gaia['pmra'], pm_dec=gaia['pmdec'],
+        #     frame='icrs', obstime='J2016'
+        # ).galactic
         
+      
+        # gaia_l = gaia_lb.l + gaia_lb.pm_l_cosb*dt.to(u.yr)
+        # gaia_b = gaia_lb.b + gaia_lb.pm_b*dt.to(u.yr)
         
-        gaia_lb = SkyCoord(
-            ra=gaia['ra'], dec=gaia['dec'],
-            pm_ra_cosdec=gaia['pmra'], pm_dec=gaia['pmdec'],
-            frame='icrs', obstime='J2016'
-        ).galactic
+        # gaia_lbt = SkyCoord(l = gaia_l, b = gaia_b, frame = 'galactic')
         
         gaia_rd = SkyCoord(
             ra=gaia['ra'], dec=gaia['dec'],
@@ -373,17 +382,9 @@ while lopping > 0:
             frame='icrs', obstime='J2016'
         )
         
-        gaia_rd
+        gaia_rdt = gaia_rd.apply_space_motion(new_obstime = cat['time'])
         
-        
-        gaia_l = gaia_lb.l + gaia_lb.pm_l_cosb*dt.to(u.yr)
-        gaia_b = gaia_lb.b + gaia_lb.pm_b*dt.to(u.yr)
-        
-        # gaia_l = gaia_lb.l 
-        # gaia_b = gaia_lb.b 
-        
-        
-        gaia_lbt = SkyCoord(l = gaia_l, b = gaia_b, frame = 'galactic')
+        gaia_lbt = gaia_rdt.galactic 
         
         gaia[f'l{cat["tag"]}'] = gaia_lbt.l
         gaia[f'b{cat["tag"]}'] = gaia_lbt.b
@@ -547,6 +548,7 @@ while lopping > 0:
             fig_pre, (ax_pre, ax1_pre) = plt.subplots(1,2,figsize = (11,5.5))
             #
             ax_pre.set_title(f'Gaia vs GNS{c+1} (Stars = {len(gaia_m)})')
+            ax1_pre.set_title(f'Residuas before any transformation')
             # ax1.set_title(f'Matching stars  = {len(d_xm)}')
             ax_pre.set_ylabel('# stars')
             ax_pre.hist(dl_pre, bins = 10,  color = 'grey', alpha = 0.5)
@@ -569,7 +571,7 @@ while lopping > 0:
             # plt.savefig(f'/Users/amartinez/Desktop/PhD/My_papers/GNS_pm_catalog/images/ABS_F1_{field_one}_gaia_resi_pos_prealign.png', dpi = 150, transparent = True, metadata = meta)
 
         # continue
-        stop(561)
+        
 # %%
         
 
@@ -719,7 +721,7 @@ while lopping > 0:
     
     
     
-    
+        print('Pasannado')
     # %%
     
     # =============================================================================
@@ -857,6 +859,13 @@ while lopping > 0:
     dx_m = dx[m_xy]
     dy_m = dy[m_xy]
     bad_xy = np.logical_not(m_xy)
+    # if len(bad) > 0:
+    #     max_bad = np.argmax(np.sqrt(dx2_bad**2 + dy2_bad**2))
+    #     ax.scatter(dx2_bad[max_bad], dy2_bad[max_bad], facecolor = 'none', s = 200, color = 'k')
+    #     # del_1 = np.isin(gaia['id'], bad_gaia)#!!!
+    #     del_1 = np.isin(gaia['id'], bad_gaia[max_bad])#!!!
+    #     gaia = gaia[np.logical_not(del_1)]#!!!
+    
     
     
     gns2_xy = np.array([gns2['xp'], gns2['yp']]).T
@@ -873,7 +882,7 @@ while lopping > 0:
     
     
     # %
-    fig, (ax,ax2, ax3) = plt.subplots(1,3, figsize =(12,4))
+    fig, (ax,ax2, ax3) = plt.subplots(1,3, figsize =(20,7))
     fig.suptitle(f'Aling degree with Gaia = {max_deg-1}, Max sep = {max_sep_ls}, Stars = {len(dpm_x)}')
     ax.set_title('GNS-Gaia pm residuals')
     ax.scatter(dpm_x,dpm_y, color = 'k', alpha = 0.3)
@@ -889,7 +898,7 @@ while lopping > 0:
                            gaia['id'][gns1_ga['ind_2']][bad_pm]):
         print(x, y, label )
         ax.annotate(str(label), xy=(x, y), xytext=(1,1), textcoords='offset points',
-                    fontsize=8, color='black')
+                    fontsize=15, color='black')
     
     # ax.annotate(36, (5,5))
     ax.legend(fontsize =15)
@@ -902,7 +911,7 @@ while lopping > 0:
                            gaia['id'][gns1_ga['ind_2']][bad_xy]):
         print(x, y, label )
         ax2.annotate(str(label), xy=(x, y), xytext=(1, 1), textcoords='offset points',
-                    fontsize=8, color='black')
+                    fontsize=15, color='black')
     
     
     ax2.set_title('GNS1-Gaia pos. residuals')
@@ -922,7 +931,7 @@ while lopping > 0:
                            gaia['id'][gns2_ga['ind_2']][bad_xy2]):
         print(x, y, label )
         ax3.annotate(str(label), xy=(x, y), xytext=(1, 1), textcoords='offset points',
-                    fontsize=8, color='black')
+                    fontsize=15, color='black')
     
     ax3.set_title('GNS2-Gaia pos. residuals')
     ax3.scatter(dx2,dy2, color = 'k', alpha = 0.3)
@@ -939,6 +948,7 @@ while lopping > 0:
     fig.tight_layout()
     plt.show()
     
+    stop(944)
     # %%
     rcParams.update({
     "figure.figsize": (10, 5),
@@ -1064,7 +1074,6 @@ if look_for_cluster == 'yes':
 # # %%
 
 
-sys.exit(605)
 # =============================================================================
 # zone =  'F20_f01_f06_H'
 # 
