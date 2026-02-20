@@ -43,6 +43,7 @@ from astropy.modeling import models, fitting
 from astropy.coordinates import search_around_sky
 from collections import Counter
 from sys import exit as stop
+from astropy.coordinates import Longitude
 # %%plotting parametres
 from matplotlib import rc
 from matplotlib import rcParams
@@ -81,8 +82,8 @@ chip_one = 0
 field_two = 20
 chip_two = 0
 
-# field_one = 'D12'
-# # field_one = 'D13'
+# # field_one = 'D12'
+# field_one = 'D13'
 # chip_one = 0
 # field_two = 1
 # chip_two = 0
@@ -98,9 +99,25 @@ chip_two = 0
 # field_two = 16
 # chip_two = 0
 
+# field_one = 19
+# chip_one = 0
+# field_two = 9
+# chip_two = 0
 
-if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16:
+# field_one = 24
+# chip_one = 0
+# field_two = 9
+# chip_two = 0
+# %%
+
+
+
+if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16 or field_one == 2 or field_one == 24 :
     t1_gns = Time(['2015-06-07T00:00:00'],scale='utc')
+
+elif field_one == 19:
+    t1_gns = Time(['2015-06-26T00:00:00'],scale='utc')
+    
 elif field_one == 'B6':
     t1_gns = Time(['2016-06-13T00:00:00'],scale='utc')
 elif field_one ==  'B1':
@@ -121,7 +138,7 @@ elif field_two == 4:
     t2_gns = Time(['2022-04-05T00:00:00'],scale='utc')
 elif field_two == 20:
     t2_gns = Time(['2022-07-25T00:00:00'],scale='utc')
-elif field_two == 1:
+elif field_two == 1 or field_two == 9 :
     t2_gns = Time(['2021-09-17T00:00:00'],scale='utc')
 elif field_two == 16:
     t2_gns = Time(['2022-08-14T00:00:00'],scale='utc')
@@ -143,40 +160,43 @@ max_sig = 0.05
 # =============================================================================
 # Alignment params
 # =============================================================================
-rebfacI = 1
-rebfacII = 1
+rebfacI = 2
+rebfacII = 2
+# gaia_clipping = 'one_one'# Clipp the Gaia outlayer one by one
+gaia_clipping = 'all'# Clipp the Gaia outlayer all at once
 
-# align_loop = 'yes'
-align_loop = 'no'
+# %%
+align_loop = 'yes'
+# align_loop = 'no'
 max_loop = 10
 align = 'Polywarp'
 # align = '2DPoly'
 # f_mode = 'WnC'
 sep_both = [50,50]
 max_sep_ls = [sep_both[0]*u.mas,sep_both[1]*u.mas]#!!!
-max_deg = 3# If this is <2 it does not enter the alignment loop. 
+max_deg = 4# If this is <2 it does not enter the alignment loop. 
 
 trans_ls = ['polynomial','affine','similarity','Weight']
 transf = trans_ls[0]
 # pre_transf = trans_ls[2]# Pre transformation
 order_trans = 1
-# clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
-clip_in_alig = None
+clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
+# clip_in_alig = None
 
-m_lim = [12,18]
+m_lim = [10 ,20]
 
 # =============================================================================
 # Proper motions param
 # ===========================================================================
 max_dis_pm = 0.150#in arcsec
 sig_H = 3# discrd pm for stars with delta H over sig_H
-e_pm_gns = 1.5# im mas/yr
+e_pm_gns = 1# im mas/yr
 
 # =============================================================================
 # Gaia Settings 
 # ============================================================================+
 e_pm_gaia = 0.3#!!!
-mag_min_gaia = 18#!!!
+mag_min_gaia = 20#!!!
 e_pos_gaia = 0.5
 # =============================================================================
 # Clustering 
@@ -201,6 +221,8 @@ while lopping > 0:
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
+    
+    
     gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
     gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
@@ -209,6 +231,14 @@ while lopping > 0:
     
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}_VVV.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}_VVV.ecsv', format = 'ascii.ecsv')
+    
+    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_noDup_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
+    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_noDup_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
+ 
+    
+    gns1['l'] = Longitude(gns1['l']).wrap_at('180d')
+    gns2['l'] = Longitude(gns2['l']).wrap_at('180d')
+    
     
     buenos1 = (gns1['l']>min(gns2['l'])) & (gns1['l']<max(gns2['l'])) & (gns1['b']>min(gns2['b'])) & (gns1['b']<max(gns2['b']))
     gns1 = gns1[buenos1]
@@ -270,7 +300,8 @@ while lopping > 0:
         gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value), overwrite = True)
     
     gaia['id'] = np.arange(len(gaia))
-    
+    gaia['l'] = Longitude(gaia['l']).wrap_at('180d')
+
    
     
 
@@ -452,8 +483,7 @@ while lopping > 0:
 #         print(40*'+')
 #     
 # =============================================================================
-        ga_w = gaia_c.l.wrap_at('360.1d')
-        gns_w = gns_c.l.wrap_at('360.1d')
+       
         
         fig, (ax, ax1, ax2) = plt.subplots(1,3, figsize = (15,5))
         fig.suptitle(f'GNS{c+1}')
@@ -719,11 +749,11 @@ while lopping > 0:
         cat['gns']['yp'] =  gns_cat['yp']
         plt.show()
     
+        # stop(724)
     
     
     
-    
-        print('Pasannado')
+        # print('Pasannado')
     # %%
     
     # =============================================================================
@@ -864,13 +894,15 @@ while lopping > 0:
     bad_loop = len(bad)
     
     if len(bad_gaia_pm) > 0:
-        max_bad_pm = np.argmax(np.sqrt(dpm_xm_bad**2 + dpm_ym_bad**2))
-        bad_gaia_pm = bad_gaia_pm[max_bad_pm]
-        bad.append(bad_gaia_pm['id'])
+        if gaia_clipping == 'one_one':
+            max_bad_pm = np.argmax(np.sqrt(dpm_xm_bad**2 + dpm_ym_bad**2))
+            bad_gaia_pm = bad_gaia_pm[max_bad_pm]
+            axm.annotate(bad_gaia_pm['id'], (bad_gaia_pm['l'], bad_gaia_pm['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
+        
         axm.scatter(bad_gaia_pm['l'], bad_gaia_pm['b'], facecolor = 'none', s = 200, color = 'red', label = f'GNS1 pm {sig_pm}$\sigma$')
-        axm.annotate(bad_gaia_pm['id'], (bad_gaia_pm['l'], bad_gaia_pm['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
-    
-   
+
+        bad.append(bad_gaia_pm['id'])
+        
     dx = (gaia['xp_1'][gns1_ga['ind_2']] - gns1['xp'][gns1_ga['ind_1']])*1e3
     dy = (gaia['yp_1'][gns1_ga['ind_2']] - gns1['yp'][gns1_ga['ind_1']])*1e3    
     m_xy, limx =  sig_cl(dx, dy, sig_pm)
@@ -880,29 +912,36 @@ while lopping > 0:
     bad_gaia_xy = gaia[gns1_ga['ind_2']][bad_xy]
     
     if len(bad_gaia_xy) > 0:
-        max_bad_xy = np.argmax(np.sqrt(dx_bad**2 + dy_bad**2))
-        bad_gaia_xy = bad_gaia_xy[max_bad_xy]
-        bad.append(bad_gaia_xy['id'])
+        if gaia_clipping == 'one_one':
+            max_bad_xy = np.argmax(np.sqrt(dx_bad**2 + dy_bad**2))
+            bad_gaia_xy = bad_gaia_xy[max_bad_xy]
+            axm.annotate(bad_gaia_xy['id'], (bad_gaia_xy['l'], bad_gaia_xy['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
         axm.scatter(bad_gaia_xy['l'], bad_gaia_xy['b'], marker = 'x', s = 200, color = 'red', label = f'GNS1 xy {sig_pm}$\sigma$')
-        axm.annotate(bad_gaia_xy['id'], (bad_gaia_xy['l'], bad_gaia_xy['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
-    
+
+        bad.append(bad_gaia_xy['id'])
+       
     
     dx2 = (gaia['xp_2'][gns2_ga['ind_2']] - gns2['xp'][gns2_ga['ind_1']])*1e3
     dy2 = (gaia['yp_2'][gns2_ga['ind_2']] - gns2['yp'][gns2_ga['ind_1']])*1e3
     m_xy2, limx2 =  sig_cl(dx2, dy2, sig_pm)
     bad_xy2 = np.logical_not(m_xy2)
-    dx2_bad = dx[bad_xy2]
-    dy2_bad = dy[bad_xy2]
-    bad_gaia_xy2 = gaia[gns1_ga['ind_2']][bad_xy2]
+    dx2_bad = dx2[bad_xy2]
+    dy2_bad = dy2[bad_xy2]
+    bad_gaia_xy2 = gaia[gns2_ga['ind_2']][bad_xy2]
     
     if len(bad_gaia_xy2) > 0:
-        max_bad_xy2 = np.argmax(np.sqrt(dx2_bad**2 + dy2_bad**2))
-        bad_gaia_xy2 = bad_gaia_xy2[max_bad_xy2]
-        bad.append(bad_gaia_xy2['id'])
+        if gaia_clipping == 'one_one':
+            max_bad_xy2 = np.argmax(np.sqrt(dx2_bad**2 + dy2_bad**2))
+            bad_gaia_xy2 = bad_gaia_xy2[max_bad_xy2]
+            axm.annotate(bad_gaia_xy2['id'], (bad_gaia_xy2['l'], bad_gaia_xy2['b']), xytext=(1, 1), textcoords='offset points', fontsize=15, color='black')
         axm.scatter(bad_gaia_xy2['l'], bad_gaia_xy2['b'], marker = '+', s = 200, color = 'red', label = f'GNS2 xy {sig_pm}$\sigma$')
-    
+
+        bad.append(bad_gaia_xy2['id'])
+
     
     axm.legend()
+    
+    
     
     # if len(dpm_xm_bad) > 0:
     #     max_bad = np.argmax(np.sqrt(dpm_xm_bad**2 + dpm_ym_bad**2))
@@ -1026,6 +1065,7 @@ while lopping > 0:
      
     print(30*'☠️')
     print(bad_loop, len(bad))
+    bad = np.hstack(bad)
     print('bad = ',[x.tolist() for x in np.unique(bad)])
     # print('bad = ',[x.tolist() for x in np.unique(bad)])
     print(30*'☠️')
