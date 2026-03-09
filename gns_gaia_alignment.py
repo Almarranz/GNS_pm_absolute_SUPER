@@ -77,10 +77,10 @@ IPython.get_ipython().run_line_magic('matplotlib', 'inline')
 # field_two = 4
 # chip_two = 0
 
-field_one = 'B1'
-chip_one = 0
-field_two = 20
-chip_two = 0
+# field_one = 'B6'
+# chip_one = 0
+# field_two = 20
+# chip_two = 0
 
 # # field_one = 'D12'
 # field_one = 'D13'
@@ -108,6 +108,16 @@ chip_two = 0
 # chip_one = 0
 # field_two = 9
 # chip_two = 0
+
+# field_one = 1
+# chip_one = 0
+# field_two = 9
+# chip_two = 0
+#
+field_one = 2
+chip_one = 0
+field_two = 9
+chip_two = 0
 # %%
 
 
@@ -118,7 +128,7 @@ if field_one == 7 or field_one == 12 or field_one == 10 or field_one == 16 or fi
 elif field_one == 19:
     t1_gns = Time(['2015-06-26T00:00:00'],scale='utc')
     
-elif field_one == 'B6':
+elif field_one == 'B6' or field_one == 1 :
     t1_gns = Time(['2016-06-13T00:00:00'],scale='utc')
 elif field_one ==  'B1':
     t1_gns = Time(['2016-05-20T00:00:00'],scale='utc')
@@ -168,13 +178,13 @@ gaia_clipping = 'all'# Clipp the Gaia outlayer all at once
 # %%
 align_loop = 'yes'
 # align_loop = 'no'
-max_loop = 10
+max_loop = 5
 align = 'Polywarp'
 # align = '2DPoly'
 # f_mode = 'WnC'
 sep_both = [50,50]
 max_sep_ls = [sep_both[0]*u.mas,sep_both[1]*u.mas]#!!!
-max_deg = 4# If this is <2 it does not enter the alignment loop. 
+max_deg = 3# If this is <2 it does not enter the alignment loop. 
 
 trans_ls = ['polynomial','affine','similarity','Weight']
 transf = trans_ls[0]
@@ -183,7 +193,7 @@ order_trans = 1
 clip_in_alig = 'yes' # Clipps the 3sigmas in position during the alignment
 # clip_in_alig = None
 
-m_lim = [10 ,20]
+m_lim = [12 ,18]
 
 # =============================================================================
 # Proper motions param
@@ -195,8 +205,8 @@ e_pm_gns = 1# im mas/yr
 # =============================================================================
 # Gaia Settings 
 # ============================================================================+
-e_pm_gaia = 0.3#!!!
-mag_min_gaia = 20#!!!
+e_pm_gaia = 0.5#!!!
+mag_min_gaia = 18#!!!
 e_pos_gaia = 0.5
 # =============================================================================
 # Clustering 
@@ -223,11 +233,11 @@ while lopping > 0:
     
     
     
-    gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
-    gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
+    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti.ecsv',  format = 'ascii.ecsv')
+    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti.ecsv', format = 'ascii.ecsv')
     
-    # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
-    # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
+    gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
+    gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
     
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_rebfac{rebfacI}_VVV.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_rebfac{rebfacII}_VVV.ecsv', format = 'ascii.ecsv')
@@ -235,6 +245,8 @@ while lopping > 0:
     # gns1 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS1/F{field_one}/{field_one}_H_chips_opti_noDup_rebfac{rebfacI}.ecsv',  format = 'ascii.ecsv')
     # gns2 = Table.read(f'/Users/amartinez/Desktop/Projects/GNS_gd/superlists/GNS2/F{field_two}/{field_two}_H_chips_opti_noDup_rebfac{rebfacII}.ecsv', format = 'ascii.ecsv')
  
+    # gns1 = Table.read('/Users/amartinez/Desktop/Projects/GNS_gd/pruebas/FB1/B1_and_B6_comb.ecsv',  format = 'ascii.ecsv')
+
     
     gns1['l'] = Longitude(gns1['l']).wrap_at('180d')
     gns2['l'] = Longitude(gns2['l']).wrap_at('180d')
@@ -279,25 +291,31 @@ while lopping > 0:
     gns2['xp'] = xg_2.to(u.arcsec)
     gns2['yp'] = yg_2.to(u.arcsec)
     
-    radius = abs(np.min(gns1['l'])-np.max(gns1['l']))*1*u.degree
+    # radius = abs(np.min(gns1['l'])-np.max(gns1['l']))*1*u.degree
+    radius = 300*u.arcsec
     # %
-    try:
-        
-        gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
-        # gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r400.ecsv'%(field_one,field_two))
-        
-        # gaia = Table.read('/Users/amartinez/Desktop/PhD/HAWK/GNS_1relative_SUPER/pruebas/gaia_f1D19_f216_r269.ecsv')
-        print('Gaia from table')
-    except:
-        print('Gaia from web')
-        # center = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic').icrs
     
-        Gaia.MAIN_GAIA_TABLE = "gaiadr3.gaia_source" # Select early Data Release 3
-        Gaia.ROW_LIMIT = -1  # it not especifty, Default rows are limited to 50. 
-        j = Gaia.cone_search_async(center, radius = abs(radius))
-        gaia = j.get_results()
-        os.makedirs(pruebas1, exist_ok=True)
-        gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value), overwrite = True)
+    gaia = Table.read('/Users/amartinez/Desktop/PhD/Catalogs/Gaia/gaia_over_GNS.txt', format = 'ascii.ecsv')
+# =============================================================================
+#     try:
+#         
+#         gaia = Table.read(pruebas1  + 'Noooo_gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value))
+#         # gaia = Table.read(pruebas1  + 'gaia_f1%s_f2%s_r400.ecsv'%(field_one,field_two))
+#         
+#         # gaia = Table.read('/Users/amartinez/Desktop/PhD/HAWK/GNS_1relative_SUPER/pruebas/gaia_f1D19_f216_r269.ecsv')
+#         print('Gaia from table')
+#     except:
+#         print('Gaia from web')
+#         # center = SkyCoord(l = np.mean(gns1['l']), b = np.mean(gns1['b']), unit = 'degree', frame = 'galactic').icrs
+#     
+#         Gaia.MAIN_GAIA_TABLE = "gaiadr3.gaia_source" # Select early Data Release 3
+#         Gaia.ROW_LIMIT = -1  # it not especifty, Default rows are limited to 50. 
+#         # j = Gaia.cone_search_async(center, radius = abs(radius))
+#         j = Gaia.cone_search_async(center, radius = radius)
+#         gaia = j.get_results()
+#         os.makedirs(pruebas1, exist_ok=True)
+#         gaia.write(pruebas1  + 'gaia_f1%s_f2%s_r%.0f.ecsv'%(field_one,field_two,radius.to(u.arcsec).value), overwrite = True)
+# =============================================================================
     
     gaia['id'] = np.arange(len(gaia))
     gaia['l'] = Longitude(gaia['l']).wrap_at('180d')
